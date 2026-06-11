@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Card Grader">
+<meta name="theme-color" content="#1a0a2e">
+<title>Pokémon Card Grader</title>
+<script>
+const manifestData = {
+  name:"Pokémon Card Grader",short_name:"Card Grader",
+  description:"AI-powered Pokémon card grading",
+  start_url:".",display:"standalone",
+  background_color:"#1a0a2e",theme_color:"#1a0a2e",orientation:"portrait",
+  icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231a0a2e'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='320' font-family='system-ui'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]
+};
+const _b=new Blob([JSON.stringify(manifestData)],{type:'application/json'});
+const _l=document.createElement('link');_l.rel='manifest';_l.href=URL.createObjectURL(_b);
+document.head.appendChild(_l);
+</script>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231a0a2e'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='320' font-family='system-ui'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+/* ── Pixel palette ─────────────────────────────────
+   Bulbasaur green: #4CAF50 / #2E7D32
+   Charmander orange: #FF6F00 / #FF8F00
+   Deep Game Boy night bg
+──────────────────────────────────────────────────── */
+:root {
+  --bulba:     #4CAF50;
+  --bulba-dark:#2E7D32;
+  --bulba-dim: #1B5E20;
+  --bulba-glow:rgba(76,175,80,0.25);
+  --char:      #FF8F00;
+  --char-dark: #E65100;
+  --char-dim:  #BF360C;
+  --char-glow: rgba(255,143,0,0.25);
+  --bg:        #0d0416;
+  --bg2:       #1a0a2e;
+  --bg3:       #2a1248;
+  --panel:     #150c28;
+  --border:    #3d2060;
+  --border2:   #6b3fa0;
+  --text:      #e8d5ff;
+  --text2:     #a07cc8;
+  --text3:     #6b4d8a;
+  --red:       #ff3c3c;
+  --red-dim:   #5c1414;
+  --yellow:    #FFD600;
+  --pixel:     'Press Start 2P', monospace;
+  --safe-top:  env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--pixel);color:var(--text);image-rendering:pixelated}
+
+/* Scanlines overlay */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+}
+
+/* ── Layout ─────────────────────────────────────── */
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* ── Header ─────────────────────────────────────── */
+.header{
+  background:var(--bg2);
+  border-bottom:3px solid var(--char);
+  box-shadow:0 2px 0 var(--char-dark), 0 0 20px var(--char-glow);
+  padding:calc(var(--safe-top) + 12px) 14px 12px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  position:relative;
+}
+.header::before{
+  content:'';position:absolute;bottom:-6px;left:0;right:0;height:2px;
+  background:var(--bulba);box-shadow:0 0 10px var(--bulba-glow);
+}
+.header-logo{font-size:20px;line-height:1}
+.header-title{font-size:9px;color:var(--char);text-shadow:0 0 8px var(--char-glow), 1px 1px 0 #000;flex:1;letter-spacing:1px}
+.header-sub{font-size:6px;color:var(--bulba);margin-top:4px;text-shadow:0 0 6px var(--bulba-glow);letter-spacing:0.5px}
+.header-btn{
+  background:var(--bg3);border:2px solid var(--border2);
+  width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+  color:var(--text2);font-size:16px;cursor:pointer;flex-shrink:0;
+  image-rendering:pixelated;
+  box-shadow:2px 2px 0 #000;
+}
+.header-btn:active{transform:translate(2px,2px);box-shadow:none}
+
+/* ── Tab bar ─────────────────────────────────────── */
+.tab-bar{
+  display:flex;background:var(--panel);
+  border-bottom:3px solid var(--border);
+  flex-shrink:0;
+}
+.tab{
+  flex:1;padding:10px 2px 8px;background:none;border:none;border-bottom:3px solid transparent;
+  color:var(--text3);font-size:7px;font-family:var(--pixel);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:color 0.1s;letter-spacing:0.3px;margin-bottom:-3px;
+}
+.tab i{font-size:16px}
+.tab.active{color:var(--char);border-bottom-color:var(--char);text-shadow:0 0 6px var(--char-glow)}
+.tab:active{color:var(--bulba)}
+
+/* ── Content ─────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-bottom)+16px)}
+.section{display:none;padding:14px}.section.active{display:block}
+
+/* ── Pixel card ─────────────────────────────────── */
+.card{
+  background:var(--panel);
+  border:2px solid var(--border);
+  box-shadow:3px 3px 0 #000, inset 0 0 30px rgba(0,0,0,0.3);
+  padding:14px;margin-bottom:12px;
+  position:relative;
+}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bulba),var(--char));opacity:0.6}
+.card-title{font-size:8px;color:var(--char);margin-bottom:12px;text-shadow:0 0 6px var(--char-glow);letter-spacing:1px}
+
+/* ── Pixel buttons ───────────────────────────────── */
+.btn{
+  width:100%;padding:12px;
+  border:2px solid var(--border2);
+  background:var(--bg3);color:var(--text);
+  font-size:8px;font-family:var(--pixel);cursor:pointer;
+  margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:3px 3px 0 #000;letter-spacing:0.5px;
+  transition:transform 0.05s;
+}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.btn.primary{
+  background:var(--char-dark);border-color:var(--char);color:#fff;
+  box-shadow:3px 3px 0 #000, 0 0 12px var(--char-glow);
+  text-shadow:1px 1px 0 #000;
+}
+.btn.primary:active{transform:translate(3px,3px);box-shadow:none}
+.btn.bulba{
+  background:var(--bulba-dim);border-color:var(--bulba);color:#fff;
+  box-shadow:3px 3px 0 #000, 0 0 10px var(--bulba-glow);
+}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.btn-row .btn{margin-bottom:0}
+
+/* ── Upload options ──────────────────────────────── */
+.upload-options{margin-bottom:12px}
+.upload-opt{
+  width:100%;padding:16px 14px;
+  background:var(--panel);border:2px solid var(--border);
+  color:var(--text);font-family:var(--pixel);cursor:pointer;
+  display:flex;align-items:center;gap:12px;margin-bottom:6px;
+  box-shadow:3px 3px 0 #000;
+}
+.upload-opt:active{transform:translate(3px,3px);box-shadow:none}
+.upload-opt i{font-size:24px;color:var(--char);flex-shrink:0;text-shadow:0 0 8px var(--char-glow)}
+.upload-opt-label{font-size:8px;color:var(--char);text-shadow:0 0 4px var(--char-glow)}
+.upload-opt-sub{font-size:6px;color:var(--text2);margin-top:5px}
+.preview-img{width:100%;max-height:300px;object-fit:contain;margin-bottom:12px;display:block;border:2px solid var(--border);box-shadow:4px 4px 0 #000;background:var(--bg)}
+.hint-text{font-size:7px;color:var(--text3);text-align:center;margin-bottom:10px;letter-spacing:0.3px}
+
+/* ── Steps ───────────────────────────────────────── */
+.step{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-dot{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:2px solid var(--border);background:var(--bg3)}
+.dot-pending{border-color:var(--border);color:var(--text3)}
+.dot-loading{border-color:var(--char);color:var(--char);box-shadow:0 0 8px var(--char-glow)}
+.dot-done{border-color:var(--bulba);color:var(--bulba);box-shadow:0 0 8px var(--bulba-glow)}
+.dot-skip{border-color:var(--border);color:var(--text3);opacity:0.4}
+.dot-err{border-color:var(--red);color:var(--red)}
+.step-name{font-size:7px;color:var(--text);letter-spacing:0.5px}
+.step-sub{font-size:6px;color:var(--text2);margin-top:4px}
+
+/* ── Grade hero ──────────────────────────────────── */
+.grade-hero{text-align:center;padding:20px 0 14px}
+.grade-circle{
+  width:90px;height:90px;
+  border:3px solid var(--char);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  margin:0 auto 12px;
+  background:var(--bg);
+  box-shadow:4px 4px 0 #000, 0 0 20px var(--char-glow), inset 0 0 20px rgba(0,0,0,0.5);
+}
+.grade-num{font-size:24px;color:var(--char);text-shadow:0 0 10px var(--char-glow), 2px 2px 0 #000;line-height:1}
+.grade-denom{font-size:7px;color:var(--text3);margin-top:3px}
+.grade-label-text{font-size:8px;color:var(--bulba);text-shadow:0 0 6px var(--bulba-glow);margin-bottom:3px}
+.grade-card-name{font-size:6px;color:var(--text2);margin-top:4px}
+
+/* ── Metrics ─────────────────────────────────────── */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.metric-box{background:var(--bg);border:2px solid var(--border);padding:10px;box-shadow:2px 2px 0 #000}
+.metric-label{font-size:6px;color:var(--text2);margin-bottom:6px;letter-spacing:0.5px}
+.metric-row{display:flex;align-items:center;gap:6px}
+.metric-track{flex:1;height:8px;background:var(--bg3);border:1px solid var(--border);overflow:hidden}
+.metric-fill{height:100%}
+.metric-val{font-size:11px;min-width:20px;text-align:right}
+.notes{font-size:6.5px;color:var(--text2);line-height:2;padding-top:10px;border-top:1px solid var(--border);letter-spacing:0.3px}
+
+/* ── Prices ──────────────────────────────────────── */
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.price-box{background:var(--bg);border:2px solid var(--border);padding:10px;text-align:center;box-shadow:2px 2px 0 #000}
+.price-label{font-size:6px;color:var(--text3);margin-bottom:4px;letter-spacing:0.5px}
+.price-val{font-size:13px;color:var(--char);text-shadow:0 0 6px var(--char-glow)}
+.roi-box{border:2px solid var(--bulba);padding:12px;text-align:center;margin-top:8px;background:var(--bg);box-shadow:3px 3px 0 #000, 0 0 12px var(--bulba-glow)}
+.roi-label{font-size:6px;color:var(--text2);margin-bottom:4px}
+.roi-val{font-size:18px;text-shadow:2px 2px 0 #000}
+
+/* ── Reference images ────────────────────────────── */
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ref-item img{width:100%;aspect-ratio:3/4;object-fit:contain;border:2px solid var(--border);background:var(--bg);box-shadow:2px 2px 0 #000}
+.ref-caption{font-size:6px;color:var(--text3);text-align:center;margin-top:3px}
+.source-tag{font-size:6px;color:var(--text3);margin-top:8px}
+.divider{height:2px;background:linear-gradient(90deg,var(--bulba),var(--char));margin:12px 0;opacity:0.4}
+
+/* ── Form fields ─────────────────────────────────── */
+.field{margin-bottom:10px}
+.field label{font-size:7px;color:var(--text2);display:block;margin-bottom:5px;letter-spacing:0.5px}
+.field input,.field select{
+  width:100%;padding:10px 10px;
+  border:2px solid var(--border2);background:var(--bg);
+  color:var(--text);font-size:8px;font-family:var(--pixel);
+  box-shadow:inset 2px 2px 0 #000;-webkit-appearance:none;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--char);box-shadow:inset 2px 2px 0 #000, 0 0 8px var(--char-glow)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── Key blocks ──────────────────────────────────── */
+.key-block{background:var(--bg);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:2px 2px 0 #000}
+.key-block label{font-size:7px;color:var(--char);display:block;margin-bottom:7px;letter-spacing:0.5px}
+.key-block input{width:100%;padding:8px 10px;border:2px solid var(--border2);background:var(--bg2);color:var(--text);font-size:8px;font-family:'SF Mono',monospace;box-shadow:inset 1px 1px 0 #000}
+.key-block .hint{font-size:6px;color:var(--text3);margin-top:6px;line-height:1.8}
+.key-link{color:var(--bulba);text-decoration:none;text-shadow:0 0 5px var(--bulba-glow)}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;font-size:6px;font-family:var(--pixel);margin-top:6px;border:2px solid;letter-spacing:0.5px}
+.pill-on{border-color:var(--bulba);color:var(--bulba);background:var(--bulba-dim);box-shadow:0 0 6px var(--bulba-glow)}
+.pill-off{border-color:var(--border);color:var(--text3);background:var(--bg2)}
+
+/* ── History ─────────────────────────────────────── */
+.history-card{display:flex;gap:10px;background:var(--panel);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:3px 3px 0 #000}
+.history-thumb{width:44px;height:60px;object-fit:contain;border:2px solid var(--border);background:var(--bg);flex-shrink:0;box-shadow:2px 2px 0 #000}
+.history-name{font-size:7px;color:var(--char);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 4px var(--char-glow)}
+.history-meta{font-size:6px;color:var(--text2);margin-top:3px;line-height:1.8}
+.badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.badge{padding:3px 6px;font-size:6px;font-family:var(--pixel);border:1px solid;letter-spacing:0.3px}
+.b-char{border-color:var(--char);color:var(--char);background:var(--char-dim)}
+.b-bulba{border-color:var(--bulba);color:var(--bulba);background:var(--bulba-dim)}
+.b-gray{border-color:var(--border);color:var(--text3);background:var(--bg)}
+.b-yellow{border-color:var(--yellow);color:var(--yellow);background:#2a2000}
+
+/* ── Stats ───────────────────────────────────────── */
+.stat-bar{background:var(--bg);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:2px 2px 0 #000}
+.stat-bar-label{font-size:6px;color:var(--text2);margin-bottom:8px;letter-spacing:0.3px}
+.stat-row{display:flex;align-items:center;gap:8px}
+.stat-track{flex:1;height:10px;background:var(--bg2);border:1px solid var(--border);overflow:hidden}
+.stat-fill{height:100%}
+.stat-val{font-size:9px;min-width:36px;color:var(--text)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-box{background:var(--bg);border:2px solid var(--border);padding:12px;box-shadow:2px 2px 0 #000}
+
+/* ── Debug log ───────────────────────────────────── */
+.debug-log{background:#000;border:2px solid var(--border);padding:10px 12px;font-size:9px;font-family:'SF Mono',monospace;line-height:1.7;max-height:220px;overflow-y:auto;margin-top:8px}
+.dl-ok{color:#4CAF50}.dl-err{color:#ff3c3c}.dl-info{color:#64b4ff}.dl-warn{color:#FFD600}
+.debug-toggle{width:100%;padding:8px;background:var(--bg2);border:2px solid var(--border);color:var(--text2);font-size:7px;font-family:var(--pixel);cursor:pointer;text-align:left;margin-top:6px;display:flex;align-items:center;justify-content:space-between;box-shadow:2px 2px 0 #000;letter-spacing:0.5px}
+
+/* ── Empty state ─────────────────────────────────── */
+.empty{text-align:center;padding:40px 16px;color:var(--text3)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;color:var(--border2)}
+.empty p{font-size:7px;line-height:2;letter-spacing:0.5px}
+
+/* ── Spinner ─────────────────────────────────────── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,143,0,0.2);border-top-color:var(--char);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Install banner ──────────────────────────────── */
+.install-banner{background:var(--bg2);border:2px solid var(--bulba);box-shadow:0 0 12px var(--bulba-glow);padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.install-banner i{font-size:20px;color:var(--bulba);flex-shrink:0}
+.install-banner-text{flex:1;font-size:6.5px;color:var(--bulba);line-height:1.8}
+.install-banner-close{background:none;border:none;color:var(--bulba);font-size:16px;cursor:pointer;padding:0;flex-shrink:0}
+
+/* ── Viewfinder ──────────────────────────────────── */
+.viewfinder-screen{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column}
+.vf-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vf-top-bar{position:absolute;top:0;left:0;right:0;padding:calc(var(--safe-top)+14px) 16px 14px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);z-index:10}
+.vf-close{background:rgba(0,0,0,0.5);border:2px solid var(--char);width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--char);font-size:18px;cursor:pointer;box-shadow:0 0 8px var(--char-glow)}
+.vf-title{color:var(--char);font-size:7px;font-family:var(--pixel);text-shadow:0 0 8px var(--char-glow),1px 1px 0 #000;letter-spacing:1px}
+.vf-library{background:rgba(0,0,0,0.5);border:2px solid var(--bulba);width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--bulba);font-size:18px;cursor:pointer;box-shadow:0 0 8px var(--bulba-glow)}
+.vf-frame-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);z-index:10}
+.vf-frame{position:relative;transition:box-shadow 0.3s}
+.vf-corner{position:absolute;width:22px;height:22px;border-style:solid;border-width:0;transition:border-color 0.3s}
+.vf-corner.tl{top:-2px;left:-2px;border-top-width:3px;border-left-width:3px}
+.vf-corner.tr{top:-2px;right:-2px;border-top-width:3px;border-right-width:3px}
+.vf-corner.bl{bottom:-2px;left:-2px;border-bottom-width:3px;border-left-width:3px}
+.vf-corner.br{bottom:-2px;right:-2px;border-bottom-width:3px;border-right-width:3px}
+.vf-guide{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:7px;font-family:var(--pixel);padding:5px 12px;transition:background 0.3s,color 0.3s;letter-spacing:0.5px;border:2px solid;text-shadow:1px 1px 0 #000}
+.vf-countdown{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:56px;font-family:var(--pixel);color:var(--char);text-shadow:0 0 20px var(--char-glow),3px 3px 0 #000;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:20}
+.vf-flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:200;transition:opacity 0.15s}
+.vf-bottom{position:absolute;bottom:0;left:0;right:0;padding:20px 20px calc(var(--safe-bottom)+20px);display:flex;align-items:center;justify-content:center;background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);z-index:10}
+.vf-shutter{width:68px;height:68px;background:var(--char);border:3px solid var(--char-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:4px 4px 0 #000, 0 0 16px var(--char-glow);transition:transform 0.1s}
+.vf-shutter:active{transform:translate(4px,4px);box-shadow:none}
+</style>
+</head>
+<body>
+
+<!-- Viewfinder -->
+<div id="viewfinderScreen" class="viewfinder-screen" style="display:none">
+  <video id="vfVideo" class="vf-video" autoplay playsinline muted></video>
+  <canvas id="vfCanvas" style="display:none"></canvas>
+  <div class="vf-top-bar">
+    <button class="vf-close" onclick="closeViewfinder()"><i class="ti ti-x"></i></button>
+    <span class="vf-title">▸ ALIGN CARD</span>
+    <button class="vf-library" onclick="document.getElementById('libInput').click()"><i class="ti ti-photo"></i></button>
+  </div>
+  <div class="vf-frame-wrap" id="vfFrameWrap">
+    <div class="vf-frame" id="vfFrame">
+      <div class="vf-corner tl" id="vfTL"></div>
+      <div class="vf-corner tr" id="vfTR"></div>
+      <div class="vf-corner bl" id="vfBL"></div>
+      <div class="vf-corner br" id="vfBR"></div>
+      <div class="vf-guide" id="vfGuide">POSITION CARD HERE</div>
+    </div>
+  </div>
+  <div class="vf-countdown" id="vfCountdown"></div>
+  <div class="vf-flash" id="vfFlash"></div>
+  <div class="vf-bottom">
+    <button class="vf-shutter" onclick="captureNow()"><i class="ti ti-camera" style="color:#000"></i></button>
+  </div>
+</div>
+
+<input type="file" id="libInput" accept="image/*" style="display:none">
+
+<!-- App -->
+<div class="app">
+  <div class="header">
+    <div class="header-logo">🃏</div>
+    <div style="flex:1">
+      <div class="header-title">CARD GRADER</div>
+      <div class="header-sub" id="headerSub">INSERT API KEYS</div>
+    </div>
+    <button class="header-btn" onclick="switchTab('settings')"><i class="ti ti-settings"></i></button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('grade')"><i class="ti ti-camera"></i>GRADE</button>
+    <button class="tab" onclick="switchTab('history')"><i class="ti ti-history"></i>LOG</button>
+    <button class="tab" onclick="switchTab('stats')"><i class="ti ti-chart-bar"></i>STATS</button>
+    <button class="tab" onclick="switchTab('settings')"><i class="ti ti-settings"></i>KEYS</button>
+  </div>
+
+  <div class="content">
+
+    <!-- GRADE TAB -->
+    <div id="grade" class="section active">
+      <div id="installBanner" style="display:none" class="install-banner">
+        <i class="ti ti-download"></i>
+        <div class="install-banner-text">ADD TO HOME SCREEN: tap Share in Safari → "Add to Home Screen"</div>
+        <button class="install-banner-close" onclick="dismissBanner()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <div id="uploadArea">
+        <div class="upload-options">
+          <button class="upload-opt" onclick="openViewfinder()">
+            <i class="ti ti-scan"></i>
+            <div>
+              <div class="upload-opt-label">▸ SCAN CARD</div>
+              <div class="upload-opt-sub">Smart frame · auto-capture when aligned</div>
+            </div>
+          </button>
+          <button class="upload-opt" onclick="document.getElementById('libInput').click()">
+            <i class="ti ti-photo"></i>
+            <div>
+              <div class="upload-opt-label">▸ CHOOSE FROM LIBRARY</div>
+              <div class="upload-opt-sub">Pick an existing photo</div>
+            </div>
+          </button>
+        </div>
+        <p class="hint-text">★ FRONT OF CARD · FLAT LIGHTING · NO GLARE ★</p>
+      </div>
+
+      <div id="previewArea" style="display:none">
+        <img id="previewImg" src="" alt="Card preview" class="preview-img">
+        <div class="btn-row">
+          <button class="btn bulba" onclick="resetGrade()"><i class="ti ti-refresh"></i> RETAKE</button>
+          <button class="btn primary" id="gradeBtn" onclick="gradeCard()">ANALYZE ▶</button>
+        </div>
+      </div>
+
+      <div id="progressArea" style="display:none">
+        <div class="card">
+          <div class="card-title">▸ ANALYZING…</div>
+          <div class="step">
+            <div class="step-dot dot-pending" id="dot-claude"><i class="ti ti-brain"></i></div>
+            <div><div class="step-name">CLAUDE VISION AI</div><div class="step-sub" id="sub-claude">WAITING…</div></div>
+          </div>
+          <div class="step">
+            <div class="step-dot dot-pending" id="dot-ppt"><i class="ti ti-cash"></i></div>
+            <div><div class="step-name">PRICE TRACKER</div><div class="step-sub" id="sub-ppt">WAITING…</div></div>
+          </div>
+          <div class="step">
+            <div class="step-dot dot-pending" id="dot-papi"><i class="ti ti-photo"></i></div>
+            <div><div class="step-name">REFERENCE IMAGES</div><div class="step-sub" id="sub-papi">WAITING…</div></div>
+          </div>
+          <button class="debug-toggle" id="debugToggle" onclick="toggleDebug()" style="display:none">
+            <span>▸ DEBUG LOG</span><i class="ti ti-chevron-down" id="debugChevron"></i>
+          </button>
+          <div id="debugLog" class="debug-log" style="display:none"></div>
+        </div>
+      </div>
+
+      <div id="resultArea"></div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="history" class="section"><div id="historyList"></div></div>
+
+    <!-- STATS TAB -->
+    <div id="stats" class="section"><div id="statsContent"></div></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="settings" class="section">
+      <div class="card">
+        <div class="card-title">▸ API KEYS</div>
+        <div class="key-block">
+          <label>POKEMONPRICETRACKER <a href="https://www.pokemonpricetracker.com/api-keys" class="key-link" target="_blank">GET FREE KEY ↗</a></label>
+          <input type="password" id="pptKey" placeholder="PASTE KEY HERE" oninput="saveKeys()" autocomplete="off">
+          <div class="hint">100 CREDITS/DAY FREE · NO CREDIT CARD</div>
+          <div id="pptPill" class="status-pill pill-off">● NOT CONNECTED</div>
+        </div>
+        <div class="key-block">
+          <label>POKEMON-API.COM (RAPIDAPI) <a href="https://rapidapi.com/tcggopro/api/pokemon-tcg-api" class="key-link" target="_blank">GET FREE KEY ↗</a></label>
+          <input type="password" id="papiKey" placeholder="PASTE RAPIDAPI KEY" oninput="saveKeys()" autocomplete="off">
+          <div class="hint">100 REQUESTS/DAY FREE · SIGN UP ON RAPIDAPI</div>
+          <div id="papiPill" class="status-pill pill-off">● NOT CONNECTED</div>
+        </div>
+        <p style="font-size:6.5px;color:var(--text3);line-height:2;margin-top:4px">KEYS SAVED ON THIS DEVICE ONLY. APP GRADES WITHOUT THEM — KEYS UNLOCK PRICES + IMAGES.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">▸ INSTALL</div>
+        <p style="font-size:6.5px;color:var(--text2);line-height:2.2;margin-bottom:12px">IN SAFARI: TAP THE SHARE BUTTON AT THE BOTTOM → "ADD TO HOME SCREEN"</p>
+        <p style="font-size:6.5px;color:var(--text3)">⚠ MUST USE SAFARI — CHROME DOES NOT SUPPORT THIS.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">▸ DATA</div>
+        <p style="font-size:6.5px;color:var(--text2);line-height:2;margin-bottom:12px">ALL HISTORY STORED LOCALLY ON THIS DEVICE.</p>
+        <button class="btn danger" onclick="clearHistory()"><i class="ti ti-trash"></i> CLEAR ALL HISTORY</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const CLAUDE_API = "https://api.anthropic.com/v1/messages";
+let imageBase64=null, currentResult=null;
+let history=[];
+try{history=JSON.parse(localStorage.getItem('pcg_history')||'[]');}catch(e){}
+
+// ── Keys ──────────────────────────────────────────
+function getKeys(){return{ppt:localStorage.getItem('pcg_ppt')||'',papi:localStorage.getItem('pcg_papi')||''};}
+function saveKeys(){
+  localStorage.setItem('pcg_ppt',document.getElementById('pptKey').value.trim());
+  localStorage.setItem('pcg_papi',document.getElementById('papiKey').value.trim());
+  updatePills();updateHeaderSub();
+}
+function loadKeyFields(){
+  const k=getKeys();
+  document.getElementById('pptKey').value=k.ppt;
+  document.getElementById('papiKey').value=k.papi;
+  updatePills();
+}
+function updatePills(){
+  const k=getKeys();
+  ['ppt','papi'].forEach(id=>{
+    const el=document.getElementById(id+'Pill');
+    el.className='status-pill '+(k[id]?'pill-on':'pill-off');
+    el.textContent=k[id]?'● CONNECTED':'● NOT CONNECTED';
+  });
+}
+function updateHeaderSub(){
+  const k=getKeys();
+  const parts=[k.ppt&&'PRICES',k.papi&&'IMAGES'].filter(Boolean);
+  document.getElementById('headerSub').textContent=parts.length?'LIVE: '+parts.join(' + '):'INSERT API KEYS';
+}
+
+// ── Tabs ──────────────────────────────────────────
+function switchTab(t){
+  const tabs=['grade','history','stats','settings'];
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',tabs[i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(t).classList.add('active');
+  if(t==='history')renderHistory();
+  if(t==='stats')renderStats();
+  if(t==='settings')loadKeyFields();
+}
+
+// ── Banner ────────────────────────────────────────
+function showInstallBannerIfNeeded(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isIOS&&!window.navigator.standalone&&!localStorage.getItem('pcg_banner_dismissed'))
+    document.getElementById('installBanner').style.display='flex';
+}
+function dismissBanner(){
+  document.getElementById('installBanner').style.display='none';
+  localStorage.setItem('pcg_banner_dismissed','1');
+}
+
+// ── Image optimizer ───────────────────────────────
+function optimizeImage(src,callback){
+  const img=new Image();
+  img.onload=()=>{
+    const MAX=1200;let w=img.width,h=img.height;
+    if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    callback(canvas.toDataURL('image/jpeg',0.88));
+  };
+  img.src=src;
+}
+
+// ── Library input ─────────────────────────────────
+document.getElementById('libInput').addEventListener('change',e=>{
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>optimizeImage(ev.target.result,dataUrl=>setPreview(dataUrl));
+  reader.readAsDataURL(file);
+  e.target.value='';
+});
+
+function setPreview(dataUrl){
+  imageBase64=dataUrl.split(',')[1];
+  document.getElementById('previewImg').src=dataUrl;
+  document.getElementById('uploadArea').style.display='none';
+  document.getElementById('previewArea').style.display='block';
+  document.getElementById('progressArea').style.display='none';
+  document.getElementById('resultArea').innerHTML='';
+}
+function resetGrade(){
+  document.getElementById('uploadArea').style.display='block';
+  document.getElementById('previewArea').style.display='none';
+  document.getElementById('progressArea').style.display='none';
+  document.getElementById('resultArea').innerHTML='';
+  imageBase64=null;currentResult=null;
+}
+
+// ── Viewfinder ────────────────────────────────────
+let vfStream=null,vfAnimFrame=null,vfCountdownInterval=null;
+let vfState='idle',vfLockFrames=0;
+const VF_W=220,VF_H=310,LOCK_NEEDED=8,CD_SECS=2;
+
+function openViewfinder(){
+  document.getElementById('viewfinderScreen').style.display='flex';
+  document.body.style.overflow='hidden';
+  const frame=document.getElementById('vfFrame');
+  frame.style.width=VF_W+'px';frame.style.height=VF_H+'px';
+  setVfState('scanning');startCamera();
+}
+function closeViewfinder(){
+  stopCamera();
+  document.getElementById('viewfinderScreen').style.display='none';
+  document.body.style.overflow='';
+  clearVfTimers();
+}
+async function startCamera(){
+  try{
+    vfStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}}});
+    const video=document.getElementById('vfVideo');
+    video.srcObject=vfStream;await video.play();
+    vfAnimFrame=requestAnimationFrame(analyzeFrame);
+  }catch(e){
+    closeViewfinder();
+    alert('CAMERA ACCESS DENIED.\nAllow camera in Settings or use "Choose from library".');
+  }
+}
+function stopCamera(){
+  if(vfStream){vfStream.getTracks().forEach(t=>t.stop());vfStream=null;}
+  if(vfAnimFrame){cancelAnimationFrame(vfAnimFrame);vfAnimFrame=null;}
+}
+function clearVfTimers(){
+  if(vfCountdownInterval){clearInterval(vfCountdownInterval);vfCountdownInterval=null;}
+  vfLockFrames=0;
+}
+function setVfState(state){
+  vfState=state;
+  const corners=['vfTL','vfTR','vfBL','vfBR'];
+  const guide=document.getElementById('vfGuide');
+  let color,text,bg;
+  if(state==='scanning'){color='#FF3B30';text='POSITION CARD IN FRAME';bg='rgba(255,59,48,0.85)';}
+  else if(state==='partial'){color='#FF8F00';text='MOVE CLOSER';bg='rgba(255,143,0,0.85)';}
+  else if(state==='locked'||state==='countdown'){color='#4CAF50';text=state==='countdown'?'HOLD STILL!':'HOLD STEADY…';bg='rgba(76,175,80,0.9)';}
+  corners.forEach(id=>{document.getElementById(id).style.borderColor=color;});
+  guide.textContent=text;
+  guide.style.background=bg;guide.style.color='#fff';guide.style.borderColor=color;
+  document.getElementById('vfFrame').style.boxShadow=`0 0 16px ${color}44`;
+}
+let frameThrottle=0;
+function analyzeFrame(ts){
+  if(vfState==='countdown'||vfState==='captured')return;
+  vfAnimFrame=requestAnimationFrame(analyzeFrame);
+  if(ts-frameThrottle<100)return;frameThrottle=ts;
+  const video=document.getElementById('vfVideo');
+  if(!video.videoWidth)return;
+  const sc=document.getElementById('vfCanvas');
+  const ctx=sc.getContext('2d');
+  const sW=80,sH=112;sc.width=sW;sc.height=sH;
+  const vW=video.videoWidth,vH=video.videoHeight;
+  const frameEl=document.getElementById('vfFrame');
+  const fR=frameEl.getBoundingClientRect(),vR=video.getBoundingClientRect();
+  ctx.drawImage(video,(fR.left-vR.left)*(vW/video.offsetWidth),(fR.top-vR.top)*(vH/video.offsetHeight),fR.width*(vW/video.offsetWidth),fR.height*(vH/video.offsetHeight),0,0,sW,sH);
+  const data=ctx.getImageData(0,0,sW,sH).data;
+  let bright=0;const samples=[];
+  for(let i=0;i<data.length;i+=16){const lum=0.299*data[i]+0.587*data[i+1]+0.114*data[i+2];samples.push(lum);if(lum>180)bright++;}
+  const avg=samples.reduce((a,b)=>a+b,0)/samples.length;
+  const variance=samples.reduce((a,s)=>a+Math.abs(s-avg),0)/samples.length;
+  const br=bright/samples.length;
+  const hasCard=variance>18&&br>0.1&&br<0.95;
+  const wellFilled=variance>28;
+  if(!hasCard){vfLockFrames=0;setVfState('scanning');}
+  else if(!wellFilled){vfLockFrames=Math.max(0,vfLockFrames-1);setVfState('partial');}
+  else{
+    vfLockFrames++;
+    if(vfLockFrames>=LOCK_NEEDED&&vfState!=='countdown'){setVfState('locked');startCountdown();}
+    else if(vfState!=='locked'&&vfState!=='countdown')setVfState('locked');
+  }
+}
+function startCountdown(){
+  cancelAnimationFrame(vfAnimFrame);vfAnimFrame=null;
+  setVfState('countdown');
+  let count=CD_SECS;
+  const cdEl=document.getElementById('vfCountdown');
+  cdEl.textContent=count;cdEl.style.opacity='1';
+  vfCountdownInterval=setInterval(()=>{
+    count--;
+    if(count<=0){clearInterval(vfCountdownInterval);cdEl.style.opacity='0';captureNow();}
+    else cdEl.textContent=count;
+  },1000);
+}
+function captureNow(){
+  clearVfTimers();vfState='captured';
+  cancelAnimationFrame(vfAnimFrame);
+  const flash=document.getElementById('vfFlash');
+  flash.style.opacity='1';setTimeout(()=>flash.style.opacity='0',150);
+  const video=document.getElementById('vfVideo');
+  const canvas=document.createElement('canvas');
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+  canvas.getContext('2d').drawImage(video,0,0);
+  optimizeImage(canvas.toDataURL('image/jpeg',0.92),dataUrl=>{
+    stopCamera();closeViewfinder();setPreview(dataUrl);
+  });
+}
+
+// ── Step UI ───────────────────────────────────────
+function setStep(id,state,sub){
+  const dot=document.getElementById('dot-'+id);
+  const subEl=document.getElementById('sub-'+id);
+  const icons={claude:'ti-brain',ppt:'ti-cash',papi:'ti-photo'};
+  dot.className='step-dot dot-'+state;
+  if(state==='loading')dot.innerHTML='<span class="spin"></span>';
+  else if(state==='done')dot.innerHTML='<i class="ti ti-check"></i>';
+  else if(state==='err')dot.innerHTML='<i class="ti ti-x"></i>';
+  else if(state==='skip')dot.innerHTML='<i class="ti ti-minus"></i>';
+  else dot.innerHTML=`<i class="ti ${icons[id]}"></i>`;
+  if(sub)subEl.textContent=sub.toUpperCase();
+}
+
+// ── Debug log ─────────────────────────────────────
+let debugLines=[];
+try{debugLines=JSON.parse(localStorage.getItem('pcg_debug')||'[]');}catch(e){}
+function dlog(msg,type='info'){
+  const ts=new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  debugLines.push({ts,msg,type});
+  if(debugLines.length>120)debugLines=debugLines.slice(-120);
+  try{localStorage.setItem('pcg_debug',JSON.stringify(debugLines.slice(-60)));}catch(e){}
+  renderDebugLog();
+  document.getElementById('debugToggle').style.display='flex';
+}
+function renderDebugLog(){
+  const el=document.getElementById('debugLog');if(!el)return;
+  el.innerHTML=debugLines.map(l=>`<div class="dl-${l.type}">[${l.ts}] ${esc(l.msg)}</div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toggleDebug(){
+  const log=document.getElementById('debugLog');
+  const chev=document.getElementById('debugChevron');
+  const open=log.style.display==='none';
+  log.style.display=open?'block':'none';
+  chev.className=open?'ti ti-chevron-up':'ti ti-chevron-down';
+  if(open)log.scrollTop=log.scrollHeight;
+}
+function copyDebugLog(){
+  const text=debugLines.map(l=>`[${l.ts}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
+  navigator.clipboard?.writeText(text).catch(()=>{});
+}
+
+// ── Fetch with timeout ────────────────────────────
+async function fetchTimeout(url,opts,ms=28000){
+  const ctrl=new AbortController();
+  const t=setTimeout(()=>ctrl.abort(),ms);
+  try{const r=await fetch(url,{...opts,signal:ctrl.signal});clearTimeout(t);return r;}
+  catch(e){clearTimeout(t);throw e;}
+}
+
+// ── Grade ─────────────────────────────────────────
+async function gradeCard(){
+  const btn=document.getElementById('gradeBtn');
+  btn.disabled=true;btn.innerHTML='<span class="spin"></span> ANALYZING…';
+  document.getElementById('previewArea').style.display='none';
+  document.getElementById('progressArea').style.display='block';
+  document.getElementById('resultArea').innerHTML='';
+  setStep('claude','loading','GRADING CARD…');
+  setStep('ppt','pending','WAITING…');
+  setStep('papi','pending','WAITING…');
+  debugLines=[];
+  dlog(`=== NEW ANALYSIS ${new Date().toLocaleString()} ===`,'info');
+  dlog(`Image size: ~${imageBase64?Math.round(imageBase64.length*0.75/1024):0}KB`,'info');
+  dlog(`Online: ${navigator.onLine}`,navigator.onLine?'ok':'err');
+  dlog(`UA: ${navigator.userAgent.slice(0,80)}`,'info');
+
+  const histCtx=history.filter(h=>h.actual).slice(-10)
+    .map(h=>`${h.name}: Pred ${h.predicted}, Actual ${h.actual} (${h.company})`).join('\n');
+  const sys=[
+    'You are an expert Pokémon card grader with deep PSA, BGS, and CGC experience.',
+    'Analyze the card image and return ONLY valid JSON — no markdown, no extra text.',
+    'Even if photo quality is imperfect, always return a full assessment.',
+    'Never refuse to grade — always return the complete JSON object.',
+    histCtx?'Past grading results:\n'+histCtx:'',
+    'Return exactly: {"predicted":<1-10 one decimal>,"label":<"Poor"|"Fair"|"Good"|"Very Good"|"Excellent"|"Near Mint"|"Mint"|"Gem Mint">,"centering":<1-10>,"corners":<1-10>,"edges":<1-10>,"surface":<1-10>,"notes":<2-3 sentences>,"card_name":<full card name>,"set_name":<set name>}'
+  ].filter(Boolean).join('\n');
+
+  let gradeData=null,priceData=null,imageData=null;
+
+  dlog('→ Sending to Claude API…','info');
+  try{
+    const res=await fetchTimeout(CLAUDE_API,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:900,system:sys,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageBase64}},
+          {type:'text',text:'Grade this Pokémon card. Return only the JSON.'}
+        ]}]
+      })
+    });
+    dlog(`Claude HTTP: ${res.status} ${res.statusText}`,res.ok?'ok':'err');
+    const d=await res.json();
+    if(d.error){dlog(`Claude error: ${d.error.type}: ${d.error.message}`,'err');throw new Error(d.error.message);}
+    dlog(`Response blocks: ${d.content?.length}`,'ok');
+    const txt=d.content.map(cv=>cv.text||'').join('').replace(/```json|```/g,'').trim();
+    dlog(`Raw (200 chars): ${txt.slice(0,200)}`,'info');
+    gradeData=JSON.parse(txt);
+    dlog(`✓ Grade: ${gradeData.predicted}/10 — ${gradeData.label}`,'ok');
+    dlog(`Card: ${gradeData.card_name} · ${gradeData.set_name}`,'ok');
+    setStep('claude','done',`${gradeData.predicted}/10 · ${gradeData.label}`);
+  }catch(e){
+    dlog(`✗ Claude error: ${e.name}: ${e.message}`,'err');
+    if(e.name==='AbortError')dlog('→ Timed out after 28s','err');
+    if(e.name==='TypeError')dlog('→ Network/CORS block','err');
+    setStep('claude','err',e.name==='AbortError'?'TIMED OUT':'FAILED — SEE DEBUG LOG');
+    document.getElementById('progressArea').style.display='none';
+    document.getElementById('previewArea').style.display='block';
+    document.getElementById('debugToggle').style.display='flex';
+    document.getElementById('debugLog').style.display='block';
+    btn.disabled=false;btn.innerHTML='ANALYZE ▶';
+    return;
+  }
+
+  const k=getKeys();
+  const searchName=(gradeData.card_name||'charizard').replace(/[^a-z0-9 ]/gi,' ').trim();
+  dlog(`Search name: "${searchName}"`,'info');
+  dlog(`PPT key: ${k.ppt?'YES':'NO'} · PAPI key: ${k.papi?'YES':'NO'}`,'info');
+  setStep('ppt',k.ppt?'loading':'skip',k.ppt?'FETCHING PRICES…':'NO KEY');
+  setStep('papi',k.papi?'loading':'skip',k.papi?'FETCHING IMAGES…':'NO KEY');
+
+  const [pptRes,papiRes]=await Promise.allSettled([
+    k.ppt?fetchPPT(searchName,k.ppt):Promise.resolve(null),
+    k.papi?fetchPAPI(searchName,k.papi):Promise.resolve(null)
+  ]);
+
+  if(pptRes.status==='fulfilled'&&pptRes.value){priceData=pptRes.value;setStep('ppt','done',priceData.found?`FOUND: ${priceData.name}`:'NO MATCH');}
+  else if(k.ppt){dlog(`✗ PPT failed: ${pptRes.reason}`,'err');setStep('ppt','err','FAILED — SEE DEBUG');}
+
+  if(papiRes.status==='fulfilled'&&papiRes.value){imageData=papiRes.value;setStep('papi','done',imageData.found?`${imageData.count} REFS`:'NO MATCH');}
+  else if(k.papi){dlog(`✗ PAPI failed: ${papiRes.reason}`,'err');setStep('papi','err','FAILED — SEE DEBUG');}
+
+  currentResult={...gradeData,priceData,imageData};
+  await new Promise(r=>setTimeout(r,400));
+  document.getElementById('progressArea').style.display='none';
+  renderResult(currentResult);
+  btn.disabled=false;btn.innerHTML='ANALYZE ▶';
+}
+
+// ── API fetchers ──────────────────────────────────
+async function fetchPPT(name,key){
+  dlog('→ PPT: sending…','info');
+  try{
+    const url=`https://www.pokemonpricetracker.com/api/v2/cards?search=${encodeURIComponent(name)}&limit=3`;
+    const r=await fetchTimeout(url,{headers:{'Authorization':'Bearer '+key}});
+    dlog(`PPT HTTP: ${r.status}`,r.ok?'ok':'err');
+    if(!r.ok){const t=await r.text().catch(()=>'');dlog(`PPT error: ${t.slice(0,200)}`,'err');return{found:false};}
+    const d=await r.json();
+    dlog(`PPT keys: ${Object.keys(d).join(', ')}`,'info');
+    const cards=d.data||d.cards||d||[];
+    dlog(`PPT cards: ${Array.isArray(cards)?cards.length:'not array'}`,cards.length?'ok':'warn');
+    if(!Array.isArray(cards)||!cards.length)return{found:false};
+    const cv=cards[0];
+    dlog(`PPT match: ${cv.name} prices: ${JSON.stringify(cv.prices||{}).slice(0,100)}`,'ok');
+    return{found:true,name:cv.name||name,raw:cv.prices?.market||cv.prices?.mid||null,psa9:cv.prices?.psa9||cv.prices?.graded?.psa9||null,psa10:cv.prices?.psa10||cv.prices?.graded?.psa10||null,cgc10:cv.prices?.cgc10||null};
+  }catch(e){dlog(`✗ PPT: ${e.name}: ${e.message}`,'err');return{found:false};}
+}
+async function fetchPAPI(name,key){
+  dlog('→ PAPI: sending…','info');
+  try{
+    const url=`https://pokemon-tcg-api.p.rapidapi.com/pokemon/cards?search=${encodeURIComponent(name)}&limit=4`;
+    const r=await fetchTimeout(url,{headers:{'x-rapidapi-key':key,'x-rapidapi-host':'pokemon-tcg-api.p.rapidapi.com'}});
+    dlog(`PAPI HTTP: ${r.status}`,r.ok?'ok':'err');
+    if(!r.ok){const t=await r.text().catch(()=>'');dlog(`PAPI error: ${t.slice(0,200)}`,'err');return{found:false};}
+    const d=await r.json();
+    dlog(`PAPI keys: ${Object.keys(d).join(', ')}`,'info');
+    const cards=d.data||d.cards||d||[];
+    dlog(`PAPI cards: ${Array.isArray(cards)?cards.length:'not array'}`,cards.length?'ok':'warn');
+    if(!Array.isArray(cards)||!cards.length)return{found:false};
+    const imgs=cards.filter(cv=>cv.image||cv.image_url).slice(0,4).map(cv=>({image:cv.image||cv.image_url,name:cv.name||'',price:cv.prices?.tcg_player?.market_price||null}));
+    dlog(`PAPI images: ${imgs.length}`,imgs.length?'ok':'warn');
+    return{found:imgs.length>0,count:imgs.length,images:imgs};
+  }catch(e){dlog(`✗ PAPI: ${e.name}: ${e.message}`,'err');return{found:false};}
+}
+
+// ── Render ────────────────────────────────────────
+const fmt=v=>v?'$'+Number(v).toFixed(2):'—';
+const gc=v=>v>=9?'#4CAF50':v>=7?'#FF8F00':v>=5?'#FFD600':'#ff3c3c';
+
+function renderResult(r){
+  const pd=r.priceData,id=r.imageData,k=getKeys();
+  const metricHTML=['CENTERING','CORNERS','EDGES','SURFACE'].map((n,i)=>{
+    const v=[r.centering,r.corners,r.edges,r.surface][i];
+    return `<div class="metric-box"><div class="metric-label">${n}</div><div class="metric-row"><div class="metric-track"><div class="metric-fill" style="width:${v*10}%;background:${gc(v)}"></div></div><div class="metric-val" style="color:${gc(v)}">${v}</div></div></div>`;
+  }).join('');
+
+  let priceHTML='';
+  if(pd?.found){
+    const roi=(pd.psa10&&pd.raw)?pd.psa10-pd.raw-30:null;
+    priceHTML=`<div class="divider"></div><div class="card-title">▸ MARKET PRICES</div>
+      <div class="prices">
+        <div class="price-box"><div class="price-label">RAW</div><div class="price-val" style="color:var(--text)">${fmt(pd.raw)}</div></div>
+        <div class="price-box"><div class="price-label">PSA 9</div><div class="price-val">${fmt(pd.psa9)}</div></div>
+        <div class="price-box"><div class="price-label">PSA 10</div><div class="price-val" style="color:var(--bulba);text-shadow:0 0 6px var(--bulba-glow)">${fmt(pd.psa10)}</div></div>
+        <div class="price-box"><div class="price-label">CGC 10</div><div class="price-val">${fmt(pd.cgc10)}</div></div>
+      </div>
+      ${roi!==null?`<div class="roi-box"><div class="roi-label">EST. ROI IF PSA 10 (AFTER ~$30 FEE)</div><div class="roi-val" style="color:${roi>50?'var(--bulba)':roi>0?'var(--char)':'var(--red)'}">${roi>=0?'+':''}${fmt(roi)}</div></div>`:''}
+      <div class="source-tag">▸ SOURCE: POKEMONPRICETRACKER · ${pd.name}</div>`;
+  }else if(!k.ppt){priceHTML=`<div class="divider"></div><p style="font-size:6.5px;color:var(--text3);line-height:2">ADD POKEMONPRICETRACKER KEY IN KEYS TAB FOR LIVE PRICES.</p>`;}
+
+  let refsHTML='';
+  if(id?.found&&id.images?.length){
+    refsHTML=`<div class="divider"></div><div class="card-title">▸ REFERENCE CARDS</div>
+      <p style="font-size:6.5px;color:var(--text2);margin-bottom:8px;line-height:2">COMPARE YOUR CARD AGAINST THESE LISTINGS</p>
+      <div class="ref-grid">${id.images.map(img=>`<div class="ref-item"><img src="${img.image}" alt="${img.name}" onerror="this.parentElement.style.display='none'"><div class="ref-caption">${img.name}${img.price?' · '+fmt(img.price):''}</div></div>`).join('')}</div>
+      <div class="source-tag">▸ SOURCE: POKEMON-API.COM</div>`;
+  }else if(!k.papi){refsHTML=`<div class="divider"></div><p style="font-size:6.5px;color:var(--text3);line-height:2">ADD POKEMON-API.COM KEY IN KEYS TAB FOR REFERENCE IMAGES.</p>`;}
+
+  const debugPanelHTML=debugLines.length?`
+    <div class="card" id="resultDebugPanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="card-title" style="margin-bottom:0">▸ DEBUG LOG</div>
+        <button onclick="copyDebugLog()" style="background:var(--bg3);border:2px solid var(--border);padding:4px 10px;font-size:6px;color:var(--text2);cursor:pointer;font-family:var(--pixel);box-shadow:2px 2px 0 #000">COPY</button>
+      </div>
+      <div class="debug-log" style="max-height:180px">${debugLines.map(l=>`<div class="dl-${l.type}">[${l.ts}] ${esc(l.msg)}</div>`).join('')}</div>
+      <p style="font-size:6px;color:var(--text3);margin-top:6px;line-height:1.8">LOG SAVED BETWEEN SESSIONS. TAP COPY TO SHARE FOR TROUBLESHOOTING.</p>
+    </div>`:'';
+
+  document.getElementById('resultArea').innerHTML=`
+    <div class="card">
+      <div class="grade-hero">
+        <div class="grade-circle"><div class="grade-num">${r.predicted.toFixed(1)}</div><div class="grade-denom">/ 10</div></div>
+        <div class="grade-label-text">${r.label.toUpperCase()}</div>
+        <div class="grade-card-name">${(r.card_name||'UNKNOWN CARD').toUpperCase()}${r.set_name?' · '+r.set_name.toUpperCase():''}</div>
+      </div>
+      <div class="metrics">${metricHTML}</div>
+      <div class="notes">${r.notes}</div>
+      ${priceHTML}${refsHTML}
+    </div>
+    <div class="card">
+      <div class="card-title">▸ LOG ACTUAL GRADE</div>
+      <div class="field"><label>CARD NAME</label><input type="text" id="logName" value="${r.card_name||''}" placeholder="E.G. CHARIZARD VMAX"></div>
+      <div class="two-col">
+        <div class="field"><label>COMPANY</label><select id="logCo"><option>PSA</option><option>BGS</option><option>CGC</option><option>SGC</option></select></div>
+        <div class="field"><label>ACTUAL GRADE</label><input type="number" id="logGrade" min="1" max="10" step="0.5" placeholder="E.G. 9"></div>
+      </div>
+      <button class="btn primary" id="saveBtn" onclick="saveResult()" style="margin-bottom:0"><i class="ti ti-device-floppy"></i> SAVE TO LOG</button>
+    </div>
+    ${debugPanelHTML}`;
+}
+
+// ── Save ──────────────────────────────────────────
+function saveResult(){
+  if(!currentResult)return;
+  const entry={
+    id:Date.now(),
+    name:document.getElementById('logName').value.trim()||'UNKNOWN CARD',
+    company:document.getElementById('logCo').value,
+    predicted:currentResult.predicted,
+    actual:parseFloat(document.getElementById('logGrade').value)||null,
+    label:currentResult.label,
+    centering:currentResult.centering,corners:currentResult.corners,
+    edges:currentResult.edges,surface:currentResult.surface,
+    psa10:currentResult.priceData?.psa10||null,
+    raw:currentResult.priceData?.raw||null,
+    thumb:document.getElementById('previewImg').src,
+    date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+  };
+  history.unshift(entry);
+  try{localStorage.setItem('pcg_history',JSON.stringify(history.slice(0,200)));}catch(e){}
+  const btn=document.getElementById('saveBtn');
+  btn.innerHTML='<i class="ti ti-check"></i> SAVED!';
+  btn.style.background='var(--bulba-dim)';btn.style.borderColor='var(--bulba)';
+  setTimeout(()=>{btn.innerHTML='<i class="ti ti-device-floppy"></i> SAVE TO LOG';btn.style.background='';btn.style.borderColor='';},2000);
+}
+
+// ── History ───────────────────────────────────────
+function renderHistory(){
+  const el=document.getElementById('historyList');
+  if(!history.length){el.innerHTML=`<div class="empty"><i class="ti ti-cards"></i><p>NO CARDS GRADED YET.\nHEAD TO GRADE TAB.</p></div>`;return;}
+  el.innerHTML=history.map(h=>`
+    <div class="history-card">
+      <img class="history-thumb" src="${h.thumb}" alt="${h.name}">
+      <div style="flex:1;min-width:0">
+        <div class="history-name">${h.name.toUpperCase()}</div>
+        <div class="history-meta">${h.date} · ${h.company}${h.psa10?' · PSA10: '+fmt(h.psa10):''}</div>
+        <div class="badges">
+          <span class="badge b-char">PRED: ${h.predicted}</span>
+          ${h.actual
+            ?`<span class="badge b-bulba">ACTUAL: ${h.actual}</span><span class="badge ${Math.abs(h.actual-h.predicted)<=0.5?'b-bulba':'b-yellow'}">Δ${h.actual-h.predicted>=0?'+':''}${(h.actual-h.predicted).toFixed(1)}</span>`
+            :'<span class="badge b-gray">PENDING</span>'}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Stats ─────────────────────────────────────────
+function renderStats(){
+  const el=document.getElementById('statsContent');
+  const graded=history.filter(h=>h.actual!=null);
+  if(graded.length<2){el.innerHTML=`<div class="empty"><i class="ti ti-chart-bar"></i><p>${graded.length<1?'LOG ACTUAL GRADES\nTO SEE STATS.':'NEED AT LEAST\n2 GRADED CARDS.'}</p></div>`;return;}
+  const diffs=graded.map(h=>Math.abs(h.actual-h.predicted));
+  const mae=diffs.reduce((a,b)=>a+b,0)/diffs.length;
+  const w1=diffs.filter(d=>d<=1).length,w05=diffs.filter(d=>d<=0.5).length;
+  const acc1=Math.round(w1/graded.length*100),acc05=Math.round(w05/graded.length*100);
+  const bias=(graded.reduce((a,h)=>a+h.predicted,0)/graded.length)-(graded.reduce((a,h)=>a+h.actual,0)/graded.length);
+  const roiCards=graded.filter(h=>h.psa10&&h.raw);
+  const totalROI=roiCards.reduce((a,h)=>a+(h.psa10-h.raw-30),0);
+  el.innerHTML=`
+    <div class="stat-bar"><div class="stat-bar-label">WITHIN 1 GRADE · ${w1} OF ${graded.length}</div><div class="stat-row"><div class="stat-track"><div class="stat-fill" style="width:${acc1}%;background:var(--char)"></div></div><div class="stat-val">${acc1}%</div></div></div>
+    <div class="stat-bar"><div class="stat-bar-label">WITHIN 0.5 GRADES</div><div class="stat-row"><div class="stat-track"><div class="stat-fill" style="width:${acc05}%;background:var(--bulba)"></div></div><div class="stat-val">${acc05}%</div></div></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div style="font-size:6px;color:var(--text2);margin-bottom:6px;letter-spacing:0.5px">AVG ERROR</div><div style="font-size:20px;color:${mae<=1?'var(--bulba)':mae<=1.5?'var(--char)':'var(--red)'};text-shadow:2px 2px 0 #000">${mae.toFixed(2)}</div></div>
+      <div class="stat-box"><div style="font-size:6px;color:var(--text2);margin-bottom:6px;letter-spacing:0.5px">BIAS</div><div style="font-size:20px;color:${Math.abs(bias)<=0.3?'var(--bulba)':'var(--char)'};text-shadow:2px 2px 0 #000">${bias>=0?'+':''}${bias.toFixed(2)}</div></div>
+    </div>
+    ${roiCards.length?`<div class="stat-bar"><div class="stat-bar-label">TOTAL EST. ROI ACROSS ${roiCards.length} CARDS</div><div style="font-size:18px;color:${totalROI>=0?'var(--bulba)':'var(--red)'};text-shadow:2px 2px 0 #000;margin-top:4px">${totalROI>=0?'+':''}${fmt(totalROI)}</div></div>`:''}
+    <div class="stat-bar"><p style="font-size:6.5px;color:var(--text2);line-height:2">
+      ${bias>0.5?'⚠ MODEL OVER-PREDICTING. KEEP LOGGING.':bias<-0.5?'⚠ MODEL UNDER-PREDICTING.':'✓ BIAS HEALTHY. KEEP LOGGING.'}
+      <br>LOGGED: ${graded.length} · PENDING: ${history.length-graded.length}
+    </p></div>`;
+}
+
+// ── Clear ─────────────────────────────────────────
+function clearHistory(){
+  if(!confirm('CLEAR ALL HISTORY?\nTHIS CANNOT BE UNDONE.'))return;
+  history=[];
+  try{localStorage.removeItem('pcg_history');}catch(e){}
+  renderHistory();
+}
+
+// ── Init ──────────────────────────────────────────
+updateHeaderSub();loadKeyFields();showInstallBannerIfNeeded();
+</script>
+</body>
+</html>
