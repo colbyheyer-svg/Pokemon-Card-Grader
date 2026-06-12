@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Card Grader">
+<meta name="theme-color" content="#1a0a2e">
+<title>Pokémon Card Grader</title>
+<script>
+const _m={name:"Pokémon Card Grader",short_name:"Card Grader",start_url:".",display:"standalone",background_color:"#1a0a2e",theme_color:"#1a0a2e",orientation:"portrait",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231a0a2e'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='320' font-family='system-ui'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]};
+const _b=new Blob([JSON.stringify(_m)],{type:'application/json'});
+const _l=document.createElement('link');_l.rel='manifest';_l.href=URL.createObjectURL(_b);document.head.appendChild(_l);
+</script>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231a0a2e'/%3E%3Ctext y='340' x='256' text-anchor='middle' font-size='320' font-family='system-ui'%3E%F0%9F%83%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.33.0/dist/tabler-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root {
+  --char:#FF8F00; --char-dark:#E65100; --char-dim:#7a2900;
+  --char-glow:rgba(255,143,0,0.3);
+  --bulba:#4CAF50; --bulba-dark:#2E7D32; --bulba-dim:#1a3d1a;
+  --bulba-glow:rgba(76,175,80,0.3);
+  --bg:#0d0416; --bg2:#1a0a2e; --bg3:#2a1248;
+  --panel:#150c28; --border:#3d2060; --border2:#6b3fa0;
+  --text:#e8d5ff; --text2:#a07cc8; --text3:#6b4d8a;
+  --red:#ff3c3c; --yellow:#FFD600;
+  --px:'Press Start 2P',monospace;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--px);color:var(--text)}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px)}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+
+/* Header */
+.hdr{background:var(--bg2);border-bottom:3px solid var(--char);box-shadow:0 2px 0 var(--char-dark),0 0 20px var(--char-glow);padding:calc(var(--safe-top) + 12px) 14px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0;position:relative}
+.hdr::after{content:'';position:absolute;bottom:-6px;left:0;right:0;height:2px;background:var(--bulba);box-shadow:0 0 10px var(--bulba-glow)}
+.hdr-title{font-size:9px;color:var(--char);text-shadow:0 0 8px var(--char-glow),1px 1px 0 #000;flex:1;letter-spacing:1px}
+.hdr-sub{font-size:6px;color:var(--bulba);margin-top:4px;text-shadow:0 0 6px var(--bulba-glow)}
+.hdr-btn{background:var(--bg3);border:2px solid var(--border2);width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;cursor:pointer;box-shadow:2px 2px 0 #000}
+.hdr-btn:active{transform:translate(2px,2px);box-shadow:none}
+
+/* Tabs */
+.tabs{display:flex;background:var(--panel);border-bottom:3px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:10px 2px 8px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text3);font-size:6px;font-family:var(--px);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;margin-bottom:-3px;letter-spacing:0.3px}
+.tab i{font-size:16px}
+.tab.active{color:var(--char);border-bottom-color:var(--char);text-shadow:0 0 6px var(--char-glow)}
+
+/* Content */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--safe-bottom)+16px)}
+.sec{display:none;padding:14px}.sec.active{display:block}
+
+/* Cards */
+.card{background:var(--panel);border:2px solid var(--border);box-shadow:3px 3px 0 #000;padding:14px;margin-bottom:12px;position:relative}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--bulba),var(--char));opacity:0.6}
+.card-title{font-size:8px;color:var(--char);margin-bottom:12px;text-shadow:0 0 6px var(--char-glow);letter-spacing:1px}
+
+/* Buttons */
+.btn{width:100%;padding:12px;border:2px solid var(--border2);background:var(--bg3);color:var(--text);font-size:7px;font-family:var(--px);cursor:pointer;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:3px 3px 0 #000;letter-spacing:0.5px}
+.btn:active{transform:translate(3px,3px);box-shadow:none}
+.btn:disabled{opacity:0.35;cursor:not-allowed}
+.btn.primary{background:var(--char-dark);border-color:var(--char);color:#fff;font-size:8px;padding:14px;box-shadow:3px 3px 0 #000,0 0 12px var(--char-glow)}
+.btn.green{background:var(--bulba-dim);border-color:var(--bulba);color:#fff;box-shadow:3px 3px 0 #000,0 0 10px var(--bulba-glow)}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.btn-row .btn{margin-bottom:0}
+
+/* Upload */
+.upload-opt{width:100%;padding:16px 14px;background:var(--panel);border:2px solid var(--border);color:var(--text);font-family:var(--px);cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:6px;box-shadow:3px 3px 0 #000}
+.upload-opt:active{transform:translate(3px,3px);box-shadow:none}
+.upload-opt i{font-size:24px;color:var(--char);flex-shrink:0;text-shadow:0 0 8px var(--char-glow)}
+.upload-opt-title{font-size:8px;color:var(--char);text-shadow:0 0 4px var(--char-glow)}
+.upload-opt-sub{font-size:6px;color:var(--text2);margin-top:5px}
+.preview-img{width:100%;max-height:300px;object-fit:contain;margin-bottom:12px;display:block;border:2px solid var(--border);box-shadow:4px 4px 0 #000;background:var(--bg)}
+.hint{font-size:6px;color:var(--text3);text-align:center;margin-bottom:10px}
+
+/* Steps */
+.step{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.dot{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid var(--border);background:var(--bg3)}
+.dp{border-color:var(--border);color:var(--text3)}
+.dl{border-color:var(--char);color:var(--char);box-shadow:0 0 8px var(--char-glow)}
+.dd{border-color:var(--bulba);color:var(--bulba);box-shadow:0 0 8px var(--bulba-glow)}
+.ds{opacity:0.4}
+.de{border-color:var(--red);color:var(--red)}
+.step-name{font-size:7px;color:var(--text);letter-spacing:0.5px}
+.step-sub{font-size:6px;color:var(--text2);margin-top:3px}
+
+/* Grade hero */
+.hero{text-align:center;padding:16px 0 12px}
+.gcircle{width:88px;height:88px;border:3px solid var(--char);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 10px;background:var(--bg);box-shadow:4px 4px 0 #000,0 0 20px var(--char-glow)}
+.gnum{font-size:24px;color:var(--char);text-shadow:0 0 10px var(--char-glow),2px 2px 0 #000;line-height:1}
+.gdenom{font-size:7px;color:var(--text3);margin-top:3px}
+.glabel{font-size:8px;color:var(--bulba);text-shadow:0 0 6px var(--bulba-glow);margin-bottom:3px}
+.gcard{font-size:6px;color:var(--text2);margin-top:4px}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mbox{background:var(--bg);border:2px solid var(--border);padding:10px;box-shadow:2px 2px 0 #000}
+.mlabel{font-size:6px;color:var(--text2);margin-bottom:6px}
+.mrow{display:flex;align-items:center;gap:6px}
+.mtrack{flex:1;height:8px;background:var(--bg3);border:1px solid var(--border);overflow:hidden}
+.mfill{height:100%}
+.mval{font-size:11px;min-width:20px;text-align:right}
+.notes-txt{font-size:6.5px;color:var(--text2);line-height:2;padding-top:10px;border-top:1px solid var(--border)}
+
+/* Prices */
+.prices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.pbox{background:var(--bg);border:2px solid var(--border);padding:10px;text-align:center;box-shadow:2px 2px 0 #000}
+.plabel{font-size:6px;color:var(--text3);margin-bottom:4px;text-transform:uppercase}
+.pval{font-size:13px;color:var(--char);text-shadow:0 0 6px var(--char-glow)}
+.roi{border:2px solid var(--bulba);padding:12px;text-align:center;margin-top:8px;background:var(--bg);box-shadow:3px 3px 0 #000,0 0 12px var(--bulba-glow)}
+
+/* Refs */
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ref-item img{width:100%;aspect-ratio:3/4;object-fit:contain;border:2px solid var(--border);background:var(--bg);box-shadow:2px 2px 0 #000}
+.ref-cap{font-size:6px;color:var(--text3);text-align:center;margin-top:3px}
+.src-tag{font-size:6px;color:var(--text3);margin-top:8px}
+.divider{height:2px;background:linear-gradient(90deg,var(--bulba),var(--char));margin:12px 0;opacity:0.4}
+
+/* Form */
+.field{margin-bottom:10px}
+.field label{font-size:7px;color:var(--text2);display:block;margin-bottom:5px}
+.field input,.field select{width:100%;padding:10px;border:2px solid var(--border2);background:var(--bg);color:var(--text);font-size:8px;font-family:var(--px);-webkit-appearance:none;box-shadow:inset 2px 2px 0 #000}
+.field input:focus,.field select:focus{outline:none;border-color:var(--char)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* Keys */
+.kblock{background:var(--bg);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:2px 2px 0 #000}
+.kblock label{font-size:7px;color:var(--char);display:block;margin-bottom:7px}
+.kblock input{width:100%;padding:8px 10px;border:2px solid var(--border2);background:var(--bg2);color:var(--text);font-size:11px;font-family:'SF Mono',monospace}
+.kblock .khint{font-size:6px;color:var(--text3);margin-top:5px;line-height:1.8}
+.klink{color:var(--bulba);text-decoration:none}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;font-size:6px;font-family:var(--px);margin-top:6px;border:2px solid;letter-spacing:0.5px}
+.pill-on{border-color:var(--bulba);color:var(--bulba);background:var(--bulba-dim)}
+.pill-off{border-color:var(--border);color:var(--text3);background:var(--bg2)}
+
+/* Debug */
+.dlog{background:#000;border:2px solid var(--border);padding:10px 12px;font-size:10px;font-family:'SF Mono',monospace;line-height:1.7;max-height:220px;overflow-y:auto;margin-top:8px}
+.dok{color:#4CAF50}.derr{color:#ff3c3c}.dinfo{color:#64b4ff}.dwarn{color:#FFD600}
+.dtoggle{width:100%;padding:8px;background:var(--bg2);border:2px solid var(--border);color:var(--text2);font-size:7px;font-family:var(--px);cursor:pointer;text-align:left;margin-top:8px;display:flex;align-items:center;justify-content:space-between;box-shadow:2px 2px 0 #000}
+
+/* History */
+.hcard{display:flex;gap:10px;background:var(--panel);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:3px 3px 0 #000}
+.hthumb{width:44px;height:60px;object-fit:contain;border:2px solid var(--border);background:var(--bg);flex-shrink:0}
+.hname{font-size:7px;color:var(--char);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmeta{font-size:6px;color:var(--text2);margin-top:3px;line-height:1.8}
+.badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.badge{padding:3px 6px;font-size:6px;font-family:var(--px);border:1px solid}
+.bc{border-color:var(--char);color:var(--char);background:var(--char-dim)}
+.bb{border-color:var(--bulba);color:var(--bulba);background:var(--bulba-dim)}
+.bg{border-color:var(--border);color:var(--text3)}
+.by{border-color:var(--yellow);color:var(--yellow);background:#2a2000}
+
+/* Stats */
+.sbar{background:var(--bg);border:2px solid var(--border);padding:12px;margin-bottom:10px;box-shadow:2px 2px 0 #000}
+.strack{flex:1;height:10px;background:var(--bg2);border:1px solid var(--border);overflow:hidden}
+.sfill{height:100%}
+.srow{display:flex;align-items:center;gap:8px}
+.sval{font-size:9px;min-width:36px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.sbox{background:var(--bg);border:2px solid var(--border);padding:12px;box-shadow:2px 2px 0 #000}
+
+/* Empty */
+.empty{text-align:center;padding:40px 16px;color:var(--text3)}
+.empty i{font-size:36px;display:block;margin-bottom:10px;color:var(--border2)}
+.empty p{font-size:7px;line-height:2.2}
+
+/* Spinner */
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,143,0,0.2);border-top-color:var(--char);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Install banner */
+.ibanner{background:var(--bg2);border:2px solid var(--bulba);box-shadow:0 0 12px var(--bulba-glow);padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+.ibanner i{font-size:20px;color:var(--bulba);flex-shrink:0}
+.ibanner-txt{flex:1;font-size:6.5px;color:var(--bulba);line-height:1.8}
+.ibanner-close{background:none;border:none;color:var(--bulba);font-size:16px;cursor:pointer;padding:0;flex-shrink:0}
+
+/* Viewfinder */
+.vfscreen{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column}
+.vfvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vftop{position:absolute;top:0;left:0;right:0;padding:calc(var(--safe-top)+14px) 16px 14px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent);z-index:10}
+.vfclose{background:rgba(0,0,0,0.5);border:2px solid var(--char);width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--char);font-size:18px;cursor:pointer}
+.vftitle{color:var(--char);font-size:7px;font-family:var(--px);text-shadow:0 0 8px var(--char-glow),1px 1px 0 #000}
+.vflib{background:rgba(0,0,0,0.5);border:2px solid var(--bulba);width:38px;height:38px;display:flex;align-items:center;justify-content:center;color:var(--bulba);font-size:18px;cursor:pointer}
+.vfwrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);z-index:10}
+.vfframe{position:relative;transition:box-shadow 0.3s}
+.vfc{position:absolute;width:22px;height:22px;border-style:solid;border-width:0;transition:border-color 0.3s}
+.vfc.tl{top:-2px;left:-2px;border-top-width:3px;border-left-width:3px}
+.vfc.tr{top:-2px;right:-2px;border-top-width:3px;border-right-width:3px}
+.vfc.bl{bottom:-2px;left:-2px;border-bottom-width:3px;border-left-width:3px}
+.vfc.br{bottom:-2px;right:-2px;border-bottom-width:3px;border-right-width:3px}
+.vfguide{position:absolute;bottom:-38px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:7px;font-family:var(--px);padding:5px 12px;border:2px solid;text-shadow:1px 1px 0 #000;letter-spacing:0.5px}
+.vfcd{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:56px;font-family:var(--px);color:var(--char);text-shadow:0 0 20px var(--char-glow),3px 3px 0 #000;pointer-events:none;opacity:0;transition:opacity 0.2s;z-index:20}
+.vfflash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:200;transition:opacity 0.15s}
+.vfbottom{position:absolute;bottom:0;left:0;right:0;padding:20px 20px calc(var(--safe-bottom)+20px);display:flex;align-items:center;justify-content:center;background:linear-gradient(to top,rgba(0,0,0,0.7),transparent);z-index:10}
+.vfshutter{width:68px;height:68px;background:var(--char);border:3px solid var(--char-dark);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:4px 4px 0 #000,0 0 16px var(--char-glow)}
+.vfshutter:active{transform:translate(4px,4px);box-shadow:none}
+</style>
+</head>
+<body>
+
+<!-- Hidden file inputs -->
+<input type="file" id="camInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="libInput" accept="image/*" style="display:none">
+
+<!-- Viewfinder -->
+<div id="vfScreen" class="vfscreen" style="display:none">
+  <video id="vfVid" class="vfvid" autoplay playsinline muted></video>
+  <canvas id="vfCanvas" style="display:none"></canvas>
+  <div class="vftop">
+    <button class="vfclose" onclick="closeVF()"><i class="ti ti-x"></i></button>
+    <span class="vftitle">▸ ALIGN CARD</span>
+    <button class="vflib" onclick="document.getElementById('libInput').click()"><i class="ti ti-photo"></i></button>
+  </div>
+  <div class="vfwrap" id="vfWrap">
+    <div class="vfframe" id="vfFrame">
+      <div class="vfc tl" id="vfTL"></div>
+      <div class="vfc tr" id="vfTR"></div>
+      <div class="vfc bl" id="vfBL"></div>
+      <div class="vfc br" id="vfBR"></div>
+      <div class="vfguide" id="vfGuide">POSITION CARD HERE</div>
+    </div>
+  </div>
+  <div class="vfcd" id="vfCD"></div>
+  <div class="vfflash" id="vfFlash"></div>
+  <div class="vfbottom">
+    <button class="vfshutter" onclick="captureNow()"><i class="ti ti-camera" style="color:#000;font-size:26px"></i></button>
+  </div>
+</div>
+
+<!-- App shell -->
+<div class="app">
+  <div class="hdr">
+    <span style="font-size:20px">🃏</span>
+    <div style="flex:1">
+      <div class="hdr-title">CARD GRADER</div>
+      <div class="hdr-sub" id="hdrSub">IMAGES LIVE · ADD PPT KEY FOR PRICES</div>
+    </div>
+    <button class="hdr-btn" onclick="switchTab('settings')"><i class="ti ti-settings"></i></button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('grade')"><i class="ti ti-camera"></i>GRADE</button>
+    <button class="tab" onclick="switchTab('history')"><i class="ti ti-history"></i>LOG</button>
+    <button class="tab" onclick="switchTab('stats')"><i class="ti ti-chart-bar"></i>STATS</button>
+    <button class="tab" onclick="switchTab('debug')"><i class="ti ti-bug"></i>DEBUG</button>
+    <button class="tab" onclick="switchTab('settings')"><i class="ti ti-settings"></i>KEYS</button>
+  </div>
+
+  <div class="content">
+
+    <!-- GRADE -->
+    <div id="grade" class="sec active">
+      <div id="installBanner" style="display:none" class="ibanner">
+        <i class="ti ti-download"></i>
+        <div class="ibanner-txt">ADD TO HOME SCREEN: Safari → Share → "Add to Home Screen"</div>
+        <button class="ibanner-close" onclick="dismissBanner()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <div id="uploadArea">
+        <button class="upload-opt" onclick="document.getElementById('camInput').click()">
+          <i class="ti ti-camera"></i>
+          <div><div class="upload-opt-title">▸ TAKE PHOTO</div><div class="upload-opt-sub">Open camera directly</div></div>
+        </button>
+        <button class="upload-opt" onclick="openVF()">
+          <i class="ti ti-scan"></i>
+          <div><div class="upload-opt-title">▸ SCAN WITH FRAME</div><div class="upload-opt-sub">Smart overlay · auto-capture</div></div>
+        </button>
+        <button class="upload-opt" onclick="document.getElementById('libInput').click()">
+          <i class="ti ti-photo"></i>
+          <div><div class="upload-opt-title">▸ CHOOSE FROM LIBRARY</div><div class="upload-opt-sub">Pick existing photo</div></div>
+        </button>
+        <p class="hint">★ FRONT OF CARD · FLAT LIGHTING · NO GLARE ★</p>
+      </div>
+
+      <div id="previewArea" style="display:none">
+        <img id="previewImg" src="" alt="Card preview" class="preview-img">
+        <div class="btn-row">
+          <button class="btn green" onclick="resetGrade()"><i class="ti ti-refresh"></i> RETAKE</button>
+          <button class="btn primary" id="gradeBtn" onclick="gradeCard()">ANALYZE ▶</button>
+        </div>
+      </div>
+
+      <div id="progressArea" style="display:none">
+        <div class="card">
+          <div class="card-title">▸ ANALYZING…</div>
+          <div class="step">
+            <div class="dot dp" id="dot-claude"><i class="ti ti-brain"></i></div>
+            <div><div class="step-name">CLAUDE VISION AI</div><div class="step-sub" id="sub-claude">WAITING…</div></div>
+          </div>
+          <div class="step">
+            <div class="dot dp" id="dot-ppt"><i class="ti ti-cash"></i></div>
+            <div><div class="step-name">PRICE TRACKER</div><div class="step-sub" id="sub-ppt">WAITING…</div></div>
+          </div>
+          <div class="step">
+            <div class="dot dp" id="dot-tcg"><i class="ti ti-photo"></i></div>
+            <div><div class="step-name">POKEMONTCG.IO</div><div class="step-sub" id="sub-tcg">WAITING…</div></div>
+          </div>
+          <button class="dtoggle" id="dbgToggle" onclick="toggleDbg()" style="display:none">
+            <span>▸ DEBUG LOG</span><i class="ti ti-chevron-down" id="dbgChev"></i>
+          </button>
+          <div id="dbgLog" class="dlog" style="display:none"></div>
+        </div>
+      </div>
+
+      <div id="resultArea"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="history" class="sec"><div id="histList"></div></div>
+
+    <!-- STATS -->
+    <div id="stats" class="sec"><div id="statsContent"></div></div>
+
+    <!-- DEBUG -->
+    <div id="debug" class="sec">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:8px;color:var(--char);text-shadow:0 0 6px var(--char-glow)">▸ DEBUG RUNS</div>
+        <button onclick="clearDebugRuns()" style="background:var(--bg3);border:2px solid var(--red);color:var(--red);font-size:6px;font-family:var(--px);padding:4px 10px;cursor:pointer;box-shadow:2px 2px 0 #000">CLEAR ALL</button>
+      </div>
+      <div id="debugRunList"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="settings" class="sec">
+      <div class="card">
+        <div class="card-title">▸ API KEYS</div>
+        <div class="kblock">
+          <label>POKEMONPRICETRACKER <a href="https://www.pokemonpricetracker.com/api-keys" class="klink" target="_blank">GET FREE KEY ↗</a></label>
+          <input type="password" id="pptKey" placeholder="PASTE KEY HERE" oninput="saveKeys()" autocomplete="off">
+          <div class="khint">100 CREDITS/DAY FREE · NO CREDIT CARD NEEDED</div>
+          <div id="pptPill" class="pill pill-off">● NOT CONNECTED</div>
+        </div>
+        <div class="kblock" style="border-color:var(--bulba);box-shadow:0 0 8px var(--bulba-glow)">
+          <label style="color:var(--bulba)">✓ POKEMONTCG.IO — NO KEY NEEDED</label>
+          <div class="khint" style="color:var(--bulba);margin-top:0">CARD IMAGES FREE · 1000 REQUESTS/DAY · ZERO SETUP</div>
+          <div class="pill pill-on" style="margin-top:6px">● ALWAYS CONNECTED</div>
+        </div>
+        <p style="font-size:6.5px;color:var(--text3);line-height:2;margin-top:4px">KEYS SAVED ON THIS DEVICE ONLY.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">▸ INSTALL ON HOME SCREEN</div>
+        <p style="font-size:6.5px;color:var(--text2);line-height:2.2;margin-bottom:10px">IN SAFARI: SHARE BUTTON → "ADD TO HOME SCREEN"</p>
+        <p style="font-size:6px;color:var(--text3)">⚠ MUST USE SAFARI — NOT CHROME</p>
+      </div>
+      <div class="card">
+        <div class="card-title">▸ DATA</div>
+        <button class="btn danger" onclick="clearHistory()"><i class="ti ti-trash"></i> CLEAR ALL HISTORY</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────
+const CLAUDE_API = "https://api.anthropic.com/v1/messages";
+const TCG_API = "https://api.pokemontcg.io/v2/cards";
+const PPT_API = "https://www.pokemonpricetracker.com/api/v2/cards";
+
+// ── State ─────────────────────────────────────────
+let imageBase64 = null;
+let currentResult = null;
+let history = [];
+try { history = JSON.parse(localStorage.getItem('pcg_h') || '[]'); } catch(e) {}
+
+// ── File inputs ───────────────────────────────────
+document.getElementById('camInput').addEventListener('change', handleFile);
+document.getElementById('libInput').addEventListener('change', handleFile);
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  dlog('File selected: ' + file.name + ' (' + Math.round(file.size/1024) + 'KB)', 'info');
+  const reader = new FileReader();
+  reader.onload = ev => optimizeAndSet(ev.target.result);
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function optimizeAndSet(src) {
+  const img = new Image();
+  img.onload = () => {
+    const MAX = 1200;
+    let w = img.width, h = img.height;
+    if (w > MAX || h > MAX) {
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else { w = Math.round(w * MAX / h); h = MAX; }
+    }
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    const out = cv.toDataURL('image/jpeg', 0.88);
+    dlog('Optimized: ' + w + 'x' + h + ' (~' + Math.round(out.length*0.75/1024) + 'KB)', 'info');
+    imageBase64 = out.split(',')[1];
+    document.getElementById('previewImg').src = out;
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('previewArea').style.display = 'block';
+    document.getElementById('progressArea').style.display = 'none';
+    document.getElementById('resultArea').innerHTML = '';
+  };
+  img.src = src;
+}
+
+function resetGrade() {
+  imageBase64 = null; currentResult = null;
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('progressArea').style.display = 'none';
+  document.getElementById('resultArea').innerHTML = '';
+}
+
+// ── Viewfinder ────────────────────────────────────
+let vfStream = null, vfAF = null, vfCDInterval = null;
+let vfState = 'idle', vfLockFrames = 0;
+
+function openVF() {
+  document.getElementById('vfScreen').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  const f = document.getElementById('vfFrame');
+  f.style.width = '220px'; f.style.height = '310px';
+  setVFState('scanning');
+  startCamera();
+}
+function closeVF() {
+  stopCamera();
+  document.getElementById('vfScreen').style.display = 'none';
+  document.body.style.overflow = '';
+  clearVFTimers();
+}
+async function startCamera() {
+  try {
+    vfStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    const v = document.getElementById('vfVid');
+    v.srcObject = vfStream;
+    await v.play();
+    vfAF = requestAnimationFrame(analyzeVF);
+  } catch(e) {
+    closeVF();
+    alert('CAMERA ACCESS DENIED.\nAllow camera in Settings or use "Choose from library".');
+  }
+}
+function stopCamera() {
+  if (vfStream) { vfStream.getTracks().forEach(t => t.stop()); vfStream = null; }
+  if (vfAF) { cancelAnimationFrame(vfAF); vfAF = null; }
+}
+function clearVFTimers() {
+  if (vfCDInterval) { clearInterval(vfCDInterval); vfCDInterval = null; }
+  vfLockFrames = 0;
+}
+function setVFState(s) {
+  vfState = s;
+  const corners = ['vfTL','vfTR','vfBL','vfBR'];
+  const g = document.getElementById('vfGuide');
+  const colors = { scanning: '#FF3B30', partial: '#FF8F00', locked: '#4CAF50', countdown: '#4CAF50' };
+  const texts = { scanning: 'POSITION CARD IN FRAME', partial: 'MOVE CLOSER', locked: 'HOLD STEADY…', countdown: 'HOLD STILL!' };
+  const c = colors[s] || '#FF3B30';
+  corners.forEach(id => { document.getElementById(id).style.borderColor = c; });
+  g.textContent = texts[s] || '';
+  g.style.background = c + 'cc'; g.style.color = '#fff'; g.style.borderColor = c;
+  document.getElementById('vfFrame').style.boxShadow = '0 0 16px ' + c + '66';
+}
+let vfThrottle = 0;
+function analyzeVF(ts) {
+  if (vfState === 'countdown' || vfState === 'captured') return;
+  vfAF = requestAnimationFrame(analyzeVF);
+  if (ts - vfThrottle < 100) return; vfThrottle = ts;
+  const vid = document.getElementById('vfVid');
+  if (!vid.videoWidth) return;
+  const sc = document.getElementById('vfCanvas');
+  const ctx = sc.getContext('2d');
+  sc.width = 80; sc.height = 112;
+  const fEl = document.getElementById('vfFrame');
+  const fR = fEl.getBoundingClientRect(), vR = vid.getBoundingClientRect();
+  const sx = (fR.left - vR.left) * (vid.videoWidth / vid.offsetWidth);
+  const sy = (fR.top - vR.top) * (vid.videoHeight / vid.offsetHeight);
+  const sw = fR.width * (vid.videoWidth / vid.offsetWidth);
+  const sh = fR.height * (vid.videoHeight / vid.offsetHeight);
+  ctx.drawImage(vid, sx, sy, sw, sh, 0, 0, 80, 112);
+  const data = ctx.getImageData(0, 0, 80, 112).data;
+  let bright = 0; const samples = [];
+  for (let i = 0; i < data.length; i += 16) {
+    const lum = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    samples.push(lum); if (lum > 180) bright++;
+  }
+  const avg = samples.reduce((a,b) => a+b, 0) / samples.length;
+  const variance = samples.reduce((a,s) => a + Math.abs(s-avg), 0) / samples.length;
+  const br = bright / samples.length;
+  const hasCard = variance > 18 && br > 0.1 && br < 0.95;
+  const wellFilled = variance > 28;
+  if (!hasCard) { vfLockFrames = 0; setVFState('scanning'); }
+  else if (!wellFilled) { vfLockFrames = Math.max(0, vfLockFrames-1); setVFState('partial'); }
+  else {
+    vfLockFrames++;
+    if (vfLockFrames >= 8 && vfState !== 'countdown') { setVFState('locked'); startVFCountdown(); }
+    else if (vfState !== 'locked' && vfState !== 'countdown') setVFState('locked');
+  }
+}
+function startVFCountdown() {
+  cancelAnimationFrame(vfAF); vfAF = null;
+  setVFState('countdown');
+  let count = 2;
+  const cdEl = document.getElementById('vfCD');
+  cdEl.textContent = count; cdEl.style.opacity = '1';
+  vfCDInterval = setInterval(() => {
+    count--;
+    if (count <= 0) { clearInterval(vfCDInterval); cdEl.style.opacity = '0'; captureNow(); }
+    else cdEl.textContent = count;
+  }, 1000);
+}
+function captureNow() {
+  clearVFTimers(); vfState = 'captured';
+  cancelAnimationFrame(vfAF);
+  const flash = document.getElementById('vfFlash');
+  flash.style.opacity = '1'; setTimeout(() => flash.style.opacity = '0', 150);
+  const vid = document.getElementById('vfVid');
+  const cv = document.createElement('canvas');
+  cv.width = vid.videoWidth; cv.height = vid.videoHeight;
+  cv.getContext('2d').drawImage(vid, 0, 0);
+  optimizeAndSet(cv.toDataURL('image/jpeg', 0.92));
+  stopCamera(); closeVF();
+}
+
+// ── Tabs ──────────────────────────────────────────
+function switchTab(t) {
+  ['grade','history','stats','debug','settings'].forEach((id, i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('active', id === t);
+    document.getElementById(id).classList.toggle('active', id === t);
+  });
+  if (t === 'history') renderHistory();
+  if (t === 'stats') renderStats();
+  if (t === 'settings') loadKeys();
+  if (t === 'debug') renderDebugRuns();
+}
+
+// ── Keys ──────────────────────────────────────────
+function getKeys() { return { ppt: localStorage.getItem('pcg_ppt') || '' }; }
+function saveKeys() {
+  localStorage.setItem('pcg_ppt', document.getElementById('pptKey').value.trim());
+  updateKeyUI();
+}
+function loadKeys() {
+  document.getElementById('pptKey').value = getKeys().ppt;
+  updateKeyUI();
+}
+function updateKeyUI() {
+  const k = getKeys();
+  const pill = document.getElementById('pptPill');
+  pill.className = 'pill ' + (k.ppt ? 'pill-on' : 'pill-off');
+  pill.textContent = k.ppt ? '● CONNECTED' : '● NOT CONNECTED';
+  document.getElementById('hdrSub').textContent = 'IMAGES LIVE' + (k.ppt ? ' · PRICES LIVE' : ' · ADD PPT KEY FOR PRICES');
+}
+
+// ── Install banner ────────────────────────────────
+function showBanner() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIOS && !window.navigator.standalone && !localStorage.getItem('pcg_banner'))
+    document.getElementById('installBanner').style.display = 'flex';
+}
+function dismissBanner() {
+  document.getElementById('installBanner').style.display = 'none';
+  localStorage.setItem('pcg_banner', '1');
+}
+
+// ── Debug — persistent run storage ───────────────
+let debugRuns = [];
+let currentRunId = null;
+let currentRunLines = [];
+
+try { debugRuns = JSON.parse(localStorage.getItem('pcg_runs') || '[]'); } catch(e) {}
+
+function startRun() {
+  currentRunId = 'RUN-' + Date.now().toString(36).toUpperCase();
+  currentRunLines = [];
+  dlog('=== ' + currentRunId + ' · ' + new Date().toLocaleString() + ' ===', 'info');
+}
+
+function finishRun(status) {
+  const run = {
+    id: currentRunId,
+    ts: new Date().toLocaleString(),
+    status: status, // 'ok' | 'err' | 'partial'
+    lines: currentRunLines.slice()
+  };
+  debugRuns.unshift(run);
+  if (debugRuns.length > 30) debugRuns = debugRuns.slice(0, 30);
+  try { localStorage.setItem('pcg_runs', JSON.stringify(debugRuns)); } catch(e) {}
+  // Badge the debug tab
+  updateDebugBadge();
+}
+
+function updateDebugBadge() {
+  const errRuns = debugRuns.filter(r => r.status === 'err').length;
+  const tabs = document.querySelectorAll('.tab');
+  const dbgTab = tabs[3]; // 4th tab = debug
+  if (dbgTab) {
+    dbgTab.innerHTML = '<i class="ti ti-bug"></i>DEBUG' + (errRuns > 0 ? '<span style="background:var(--red);color:#fff;font-size:5px;padding:1px 4px;margin-left:3px;border-radius:2px">' + errRuns + '</span>' : '');
+  }
+}
+
+function dlog(msg, type) {
+  type = type || 'info';
+  const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const line = { ts, msg, type };
+  currentRunLines.push(line);
+  // Also update inline progress log if visible
+  const el = document.getElementById('dbgLog');
+  if (el && el.style.display !== 'none') {
+    el.innerHTML = currentRunLines.map(l => '<div class="d'+l.type+'">['+l.ts+'] '+esc(l.msg)+'</div>').join('');
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function toggleDbg() {
+  const log = document.getElementById('dbgLog');
+  const chev = document.getElementById('dbgChev');
+  const open = log.style.display === 'none';
+  log.style.display = open ? 'block' : 'none';
+  chev.className = open ? 'ti ti-chevron-up' : 'ti ti-chevron-down';
+  if (open) {
+    log.innerHTML = currentRunLines.map(l => '<div class="d'+l.type+'">['+l.ts+'] '+esc(l.msg)+'</div>').join('');
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function copyLog() {
+  const t = currentRunLines.map(l => '['+l.ts+'] ['+l.type.toUpperCase()+'] '+l.msg).join('\n');
+  navigator.clipboard && navigator.clipboard.writeText(t).catch(() => {});
+}
+
+function copyRunLog(id) {
+  const run = debugRuns.find(r => r.id === id);
+  if (!run) return;
+  const t = run.id + ' · ' + run.ts + '\n' + run.lines.map(l => '['+l.ts+'] ['+l.type.toUpperCase()+'] '+l.msg).join('\n');
+  navigator.clipboard && navigator.clipboard.writeText(t).catch(() => {});
+  event.target.textContent = 'COPIED!';
+  setTimeout(() => event.target.textContent = 'COPY', 1500);
+}
+
+function toggleRunLog(id) {
+  const el = document.getElementById('runlog-' + id);
+  const btn = document.getElementById('runtoggle-' + id);
+  if (!el) return;
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '▴ HIDE' : '▾ SHOW LOG';
+}
+
+function clearDebugRuns() {
+  if (!confirm('CLEAR ALL DEBUG RUNS?')) return;
+  debugRuns = [];
+  try { localStorage.removeItem('pcg_runs'); } catch(e) {}
+  renderDebugRuns();
+  updateDebugBadge();
+}
+
+function renderDebugRuns() {
+  const el = document.getElementById('debugRunList');
+  if (!el) return;
+  if (!debugRuns.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-bug"></i><p>NO RUNS YET.\nANALYZE A CARD TO\nSEE DEBUG LOGS HERE.</p></div>';
+    return;
+  }
+  el.innerHTML = debugRuns.map(run => {
+    const errCount = run.lines.filter(l => l.type === 'err').length;
+    const statusColor = run.status === 'ok' ? 'var(--bulba)' : run.status === 'partial' ? 'var(--char)' : 'var(--red)';
+    const statusLabel = run.status === 'ok' ? '✓ SUCCESS' : run.status === 'partial' ? '⚠ PARTIAL' : '✗ FAILED';
+    return '<div class="card" style="border-color:' + statusColor + ';box-shadow:3px 3px 0 #000,0 0 8px ' + statusColor + '44">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">' +
+        '<div>' +
+          '<div style="font-size:7px;color:' + statusColor + ';margin-bottom:3px">' + run.id + '</div>' +
+          '<div style="font-size:6px;color:var(--text2)">' + run.ts + '</div>' +
+          (errCount > 0 ? '<div style="font-size:6px;color:var(--red);margin-top:3px">' + errCount + ' ERROR' + (errCount>1?'S':'') + '</div>' : '') +
+        '</div>' +
+        '<span style="font-size:7px;color:' + statusColor + ';font-family:var(--px)">' + statusLabel + '</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px">' +
+        '<button id="runtoggle-' + run.id + '" onclick="toggleRunLog('' + run.id + '')" style="flex:1;background:var(--bg3);border:2px solid var(--border);color:var(--text2);font-size:6px;font-family:var(--px);padding:6px;cursor:pointer;box-shadow:2px 2px 0 #000">▾ SHOW LOG</button>' +
+        '<button onclick="copyRunLog('' + run.id + '')" style="flex:1;background:var(--bg3);border:2px solid var(--border2);color:var(--text);font-size:6px;font-family:var(--px);padding:6px;cursor:pointer;box-shadow:2px 2px 0 #000">COPY</button>' +
+      '</div>' +
+      '<div id="runlog-' + run.id + '" class="dlog" style="display:none;margin-top:8px">' +
+        run.lines.map(l => '<div class="d' + l.type + '">[' + l.ts + '] ' + esc(l.msg) + '</div>').join('') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Fetch with timeout ────────────────────────────
+async function fetchT(url, opts, ms) {
+  ms = ms || 28000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, Object.assign({}, opts, { signal: ctrl.signal }));
+    clearTimeout(timer);
+    return r;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// ── Step UI ───────────────────────────────────────
+function setStep(id, state, sub) {
+  const dot = document.getElementById('dot-' + id);
+  const subEl = document.getElementById('sub-' + id);
+  const icons = { claude: 'ti-brain', ppt: 'ti-cash', tcg: 'ti-photo' };
+  dot.className = 'dot';
+  if (state === 'loading') { dot.classList.add('dl'); dot.innerHTML = '<span class="spin"></span>'; }
+  else if (state === 'done') { dot.classList.add('dd'); dot.innerHTML = '<i class="ti ti-check"></i>'; }
+  else if (state === 'err') { dot.classList.add('de'); dot.innerHTML = '<i class="ti ti-x"></i>'; }
+  else if (state === 'skip') { dot.classList.add('dp', 'ds'); dot.innerHTML = '<i class="ti ti-minus"></i>'; }
+  else { dot.classList.add('dp'); dot.innerHTML = '<i class="ti ' + (icons[id]||'ti-circle') + '"></i>'; }
+  if (sub) subEl.textContent = sub.toUpperCase();
+}
+
+// ── Grade ─────────────────────────────────────────
+async function gradeCard() {
+  if (!imageBase64) { alert('NO IMAGE LOADED'); return; }
+  const btn = document.getElementById('gradeBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> ANALYZING…';
+  document.getElementById('previewArea').style.display = 'none';
+  document.getElementById('progressArea').style.display = 'block';
+  document.getElementById('resultArea').innerHTML = '';
+
+  // Start a new tracked debug run
+  startRun();
+  document.getElementById('dbgToggle').style.display = 'flex';
+  document.getElementById('dbgLog').style.display = 'block';
+  document.getElementById('dbgChev').className = 'ti ti-chevron-up';
+  document.getElementById('dbgLog').innerHTML = '';
+
+  setStep('claude', 'loading', 'GRADING…');
+  setStep('ppt', 'pending', 'WAITING…');
+  setStep('tcg', 'loading', 'FETCHING IMAGES…');
+  dlog('Image size: ~' + Math.round(imageBase64.length * 0.75 / 1024) + 'KB', 'info');
+  dlog('Online: ' + navigator.onLine, navigator.onLine ? 'ok' : 'err');
+
+  const histCtx = history.filter(h => h.actual).slice(-10)
+    .map(h => h.name + ': Pred ' + h.predicted + ', Actual ' + h.actual + ' (' + h.company + ')').join('\n');
+
+  const sys = 'You are an expert Pokémon card grader with PSA, BGS, and CGC experience.\n' +
+    'Analyze the card image and return ONLY valid JSON — no markdown, no extra text.\n' +
+    'Even if photo quality is imperfect, always return a full grade assessment.\n' +
+    'Never refuse — always return the complete JSON object.\n' +
+    (histCtx ? 'Past results for calibration:\n' + histCtx + '\n' : '') +
+    'Return exactly: {"predicted":<1-10 one decimal>,"label":<"Poor"|"Fair"|"Good"|"Very Good"|"Excellent"|"Near Mint"|"Mint"|"Gem Mint">,"centering":<1-10>,"corners":<1-10>,"edges":<1-10>,"surface":<1-10>,"notes":<2-3 sentences>,"card_name":<full card name>,"set_name":<set name>}';
+
+  let gradeData = null, priceData = null, imageData = null;
+
+  // Claude Vision
+  dlog('→ Sending to Claude API…', 'info');
+  try {
+    const res = await fetchT(CLAUDE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 900,
+        system: sys,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: imageBase64 } },
+          { type: 'text', text: 'Grade this Pokémon card. Return only the JSON.' }
+        ]}]
+      })
+    });
+    dlog('Claude HTTP: ' + res.status + ' ' + res.statusText, res.ok ? 'ok' : 'err');
+    const d = await res.json();
+    if (d.error) { dlog('Claude error: ' + d.error.type + ': ' + d.error.message, 'err'); throw new Error(d.error.message); }
+    dlog('Response blocks: ' + (d.content ? d.content.length : 0), 'ok');
+    const txt = d.content.map(cv => cv.text || '').join('').replace(/```json|```/g, '').trim();
+    dlog('Raw (200): ' + txt.slice(0, 200), 'info');
+    gradeData = JSON.parse(txt);
+    dlog('✓ Grade: ' + gradeData.predicted + '/10 — ' + gradeData.label, 'ok');
+    dlog('Card: ' + gradeData.card_name + ' · ' + gradeData.set_name, 'ok');
+    setStep('claude', 'done', gradeData.predicted + '/10 · ' + gradeData.label);
+  } catch(e) {
+    dlog('✗ Claude failed: ' + e.name + ': ' + e.message, 'err');
+    if (e.name === 'AbortError') dlog('→ Timed out after 28s', 'err');
+    if (e.name === 'TypeError') dlog('→ Network error / CORS block', 'err');
+    setStep('claude', 'err', e.name === 'AbortError' ? 'TIMED OUT' : 'FAILED');
+    finishRun('err');
+    document.getElementById('progressArea').style.display = 'none';
+    document.getElementById('previewArea').style.display = 'block';
+    btn.disabled = false; btn.innerHTML = 'ANALYZE ▶';
+    return;
+  }
+
+  // Parallel: PPT + TCG
+  const k = getKeys();
+  const searchName = (gradeData.card_name || 'charizard').replace(/[^a-z0-9 ]/gi, ' ').trim();
+  dlog('Search name: "' + searchName + '"', 'info');
+  dlog('PPT key present: ' + (k.ppt ? 'YES' : 'NO'), 'info');
+
+  setStep('ppt', k.ppt ? 'loading' : 'skip', k.ppt ? 'FETCHING PRICES…' : 'NO KEY — ADD IN KEYS TAB');
+
+  const [pptRes, tcgRes] = await Promise.allSettled([
+    k.ppt ? fetchPPT(searchName, k.ppt) : Promise.resolve(null),
+    fetchTCG(searchName)
+  ]);
+
+  if (pptRes.value) { priceData = pptRes.value; setStep('ppt', 'done', priceData.found ? 'FOUND: ' + priceData.name : 'NO MATCH'); }
+  else if (k.ppt) { dlog('✗ PPT failed', 'err'); setStep('ppt', 'err', 'FAILED'); }
+
+  if (tcgRes.value) { imageData = tcgRes.value; setStep('tcg', 'done', imageData.found ? imageData.count + ' REFS FOUND' : 'NO MATCH'); }
+  else { dlog('✗ TCG failed', 'err'); setStep('tcg', 'err', 'FAILED'); }
+
+  currentResult = Object.assign({}, gradeData, { priceData: priceData, imageData: imageData });
+  // Determine overall run status
+  const runStatus = !gradeData ? 'err' : (!priceData && !imageData) ? 'partial' : 'ok';
+  finishRun(runStatus);
+  await new Promise(r => setTimeout(r, 400));
+  document.getElementById('progressArea').style.display = 'none';
+  renderResult(currentResult);
+  btn.disabled = false; btn.innerHTML = 'ANALYZE ▶';
+}
+
+// ── PPT fetcher ───────────────────────────────────
+async function fetchPPT(name, key) {
+  dlog('→ PPT: sending…', 'info');
+  try {
+    const url = PPT_API + '?search=' + encodeURIComponent(name) + '&limit=3';
+    dlog('PPT URL: ' + url.slice(0, 80), 'info');
+    const r = await fetchT(url, { headers: { 'X-API-Key': key } }, 15000);
+    dlog('PPT HTTP: ' + r.status, r.ok ? 'ok' : 'err');
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      dlog('PPT error body: ' + t.slice(0, 200), 'err');
+      return { found: false };
+    }
+    const d = await r.json();
+    dlog('PPT response keys: ' + Object.keys(d).join(', '), 'info');
+    const cards = d.data || d.cards || (Array.isArray(d) ? d : []);
+    dlog('PPT cards found: ' + cards.length, cards.length ? 'ok' : 'warn');
+    if (!cards.length) return { found: false };
+    const cv = cards[0];
+    dlog('PPT match: ' + cv.name + ' · prices: ' + JSON.stringify(cv.prices || {}).slice(0, 100), 'ok');
+    return {
+      found: true, name: cv.name || name,
+      raw: (cv.prices && (cv.prices.market || cv.prices.mid)) || null,
+      psa9: (cv.prices && (cv.prices.psa9 || (cv.prices.graded && cv.prices.graded.psa9))) || null,
+      psa10: (cv.prices && (cv.prices.psa10 || (cv.prices.graded && cv.prices.graded.psa10))) || null,
+      cgc10: (cv.prices && cv.prices.cgc10) || null
+    };
+  } catch(e) { dlog('✗ PPT: ' + e.name + ': ' + e.message, 'err'); return { found: false }; }
+}
+
+// ── TCG fetcher (pokemontcg.io — no key needed) ───
+async function fetchTCG(name) {
+  dlog('→ pokemontcg.io: sending…', 'info');
+  try {
+    const url = TCG_API + '?q=' + encodeURIComponent('name:"' + name + '"') + '&pageSize=4&select=id,name,images,tcgplayer';
+    dlog('TCG URL: ' + url.slice(0, 100), 'info');
+    const r = await fetchT(url, { headers: { 'Content-Type': 'application/json' } }, 15000);
+    dlog('TCG HTTP: ' + r.status, r.ok ? 'ok' : 'err');
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      dlog('TCG error: ' + t.slice(0, 200), 'err');
+      return { found: false };
+    }
+    const d = await r.json();
+    dlog('TCG total: ' + d.totalCount, 'info');
+    const cards = d.data || [];
+    dlog('TCG returned: ' + cards.length, cards.length ? 'ok' : 'warn');
+    if (!cards.length) return { found: false };
+    const imgs = cards.filter(cv => cv.images && (cv.images.large || cv.images.small)).slice(0, 4).map(cv => ({
+      image: (cv.images && (cv.images.large || cv.images.small)) || '',
+      name: cv.name || '',
+      price: (cv.tcgplayer && cv.tcgplayer.prices && ((cv.tcgplayer.prices.holofoil && cv.tcgplayer.prices.holofoil.market) || (cv.tcgplayer.prices.normal && cv.tcgplayer.prices.normal.market))) || null
+    }));
+    dlog('TCG images extracted: ' + imgs.length, imgs.length ? 'ok' : 'warn');
+    return { found: imgs.length > 0, count: imgs.length, images: imgs };
+  } catch(e) { dlog('✗ TCG: ' + e.name + ': ' + e.message, 'err'); return { found: false }; }
+}
+
+// ── Render result ─────────────────────────────────
+function fmt(v) { return v ? '$' + Number(v).toFixed(2) : '—'; }
+function gc(v) { return v >= 9 ? '#4CAF50' : v >= 7 ? '#FF8F00' : v >= 5 ? '#FFD600' : '#ff3c3c'; }
+
+function renderResult(r) {
+  const pd = r.priceData, id = r.imageData, k = getKeys();
+
+  const metricHTML = ['CENTERING','CORNERS','EDGES','SURFACE'].map((n, i) => {
+    const v = [r.centering, r.corners, r.edges, r.surface][i];
+    return '<div class="mbox"><div class="mlabel">' + n + '</div><div class="mrow"><div class="mtrack"><div class="mfill" style="width:' + (v*10) + '%;background:' + gc(v) + '"></div></div><div class="mval" style="color:' + gc(v) + '">' + v + '</div></div></div>';
+  }).join('');
+
+  let priceHTML = '';
+  if (pd && pd.found) {
+    const roi = (pd.psa10 && pd.raw) ? (pd.psa10 - pd.raw - 30) : null;
+    const roiColor = roi > 50 ? 'var(--bulba)' : roi > 0 ? 'var(--char)' : 'var(--red)';
+    priceHTML = '<div class="divider"></div><div class="card-title">▸ MARKET PRICES</div>' +
+      '<div class="prices">' +
+      '<div class="pbox"><div class="plabel">RAW</div><div class="pval" style="color:var(--text)">' + fmt(pd.raw) + '</div></div>' +
+      '<div class="pbox"><div class="plabel">PSA 9</div><div class="pval">' + fmt(pd.psa9) + '</div></div>' +
+      '<div class="pbox"><div class="plabel">PSA 10</div><div class="pval" style="color:var(--bulba)">' + fmt(pd.psa10) + '</div></div>' +
+      '<div class="pbox"><div class="plabel">CGC 10</div><div class="pval">' + fmt(pd.cgc10) + '</div></div>' +
+      '</div>' +
+      (roi !== null ? '<div class="roi"><div style="font-size:6px;color:var(--text2);margin-bottom:4px">EST. ROI IF PSA 10 (AFTER ~$30 FEE)</div><div style="font-size:18px;color:' + roiColor + ';text-shadow:2px 2px 0 #000">' + (roi >= 0 ? '+' : '') + fmt(roi) + '</div></div>' : '') +
+      '<div class="src-tag">▸ POKEMONPRICETRACKER · ' + (pd.name || '') + '</div>';
+  } else if (!k.ppt) {
+    priceHTML = '<div class="divider"></div><p style="font-size:6.5px;color:var(--text3);line-height:2">ADD POKEMONPRICETRACKER KEY IN KEYS TAB FOR LIVE PRICES.</p>';
+  }
+
+  let refsHTML = '';
+  if (id && id.found && id.images && id.images.length) {
+    refsHTML = '<div class="divider"></div><div class="card-title">▸ REFERENCE CARDS</div>' +
+      '<p style="font-size:6.5px;color:var(--text2);margin-bottom:8px;line-height:2">COMPARE YOUR CARD AGAINST THESE</p>' +
+      '<div class="ref-grid">' +
+      id.images.map(img => '<div class="ref-item"><img src="' + img.image + '" alt="' + img.name + '" onerror="this.parentElement.style.display=\'none\'"><div class="ref-cap">' + img.name + (img.price ? ' · ' + fmt(img.price) : '') + '</div></div>').join('') +
+      '</div><div class="src-tag">▸ POKEMONTCG.IO</div>';
+  }
+
+  const dbgHTML = currentRunLines.length ? '<div class="card">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+    '<div class="card-title" style="margin-bottom:0">▸ DEBUG LOG · ' + (currentRunId || '') + '</div>' +
+    '<button onclick="copyLog()" style="background:var(--bg3);border:2px solid var(--border);padding:4px 10px;font-size:6px;color:var(--text2);cursor:pointer;font-family:var(--px);box-shadow:2px 2px 0 #000">COPY</button>' +
+    '</div>' +
+    '<div class="dlog" style="max-height:180px">' + currentRunLines.map(l => '<div class="d' + l.type + '">[' + l.ts + '] ' + esc(l.msg) + '</div>').join('') + '</div>' +
+    '<p style="font-size:6px;color:var(--text3);margin-top:6px;line-height:1.8">TAP COPY → PASTE HERE · OR SEE DEBUG TAB FOR ALL RUNS</p>' +
+    '</div>' : '';
+
+  document.getElementById('resultArea').innerHTML =
+    '<div class="card">' +
+      '<div class="hero">' +
+        '<div class="gcircle"><div class="gnum">' + r.predicted.toFixed(1) + '</div><div class="gdenom">/ 10</div></div>' +
+        '<div class="glabel">' + (r.label || '').toUpperCase() + '</div>' +
+        '<div class="gcard">' + ((r.card_name || 'UNKNOWN CARD') + (r.set_name ? ' · ' + r.set_name : '')).toUpperCase() + '</div>' +
+      '</div>' +
+      '<div class="metrics">' + metricHTML + '</div>' +
+      '<div class="notes-txt">' + (r.notes || '') + '</div>' +
+      priceHTML + refsHTML +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-title">▸ LOG ACTUAL GRADE</div>' +
+      '<div class="field"><label>CARD NAME</label><input type="text" id="logName" value="' + (r.card_name || '') + '" placeholder="E.G. CHARIZARD VMAX"></div>' +
+      '<div class="two-col">' +
+        '<div class="field"><label>COMPANY</label><select id="logCo"><option>PSA</option><option>BGS</option><option>CGC</option><option>SGC</option></select></div>' +
+        '<div class="field"><label>ACTUAL GRADE</label><input type="number" id="logGrade" min="1" max="10" step="0.5" placeholder="9"></div>' +
+      '</div>' +
+      '<button class="btn primary" id="saveBtn" onclick="saveResult()" style="margin-bottom:0"><i class="ti ti-device-floppy"></i> SAVE TO LOG</button>' +
+    '</div>' +
+    dbgHTML;
+}
+
+// ── Save ──────────────────────────────────────────
+function saveResult() {
+  if (!currentResult) return;
+  const entry = {
+    id: Date.now(),
+    name: (document.getElementById('logName').value.trim() || 'UNKNOWN CARD').toUpperCase(),
+    company: document.getElementById('logCo').value,
+    predicted: currentResult.predicted,
+    actual: parseFloat(document.getElementById('logGrade').value) || null,
+    label: currentResult.label,
+    centering: currentResult.centering, corners: currentResult.corners,
+    edges: currentResult.edges, surface: currentResult.surface,
+    psa10: (currentResult.priceData && currentResult.priceData.psa10) || null,
+    raw: (currentResult.priceData && currentResult.priceData.raw) || null,
+    thumb: document.getElementById('previewImg').src,
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  };
+  history.unshift(entry);
+  try { localStorage.setItem('pcg_h', JSON.stringify(history.slice(0, 200))); } catch(e) {}
+  const btn = document.getElementById('saveBtn');
+  btn.innerHTML = '<i class="ti ti-check"></i> SAVED!';
+  btn.style.background = 'var(--bulba-dim)'; btn.style.borderColor = 'var(--bulba)';
+  setTimeout(() => { btn.innerHTML = '<i class="ti ti-device-floppy"></i> SAVE TO LOG'; btn.style.background = ''; btn.style.borderColor = ''; }, 2000);
+}
+
+// ── History ───────────────────────────────────────
+function renderHistory() {
+  const el = document.getElementById('histList');
+  if (!history.length) { el.innerHTML = '<div class="empty"><i class="ti ti-cards"></i><p>NO CARDS GRADED YET.\nGO TO GRADE TAB.</p></div>'; return; }
+  el.innerHTML = history.map(h =>
+    '<div class="hcard">' +
+      '<img class="hthumb" src="' + h.thumb + '" alt="' + h.name + '">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="hname">' + h.name + '</div>' +
+        '<div class="hmeta">' + h.date + ' · ' + h.company + (h.psa10 ? ' · PSA10: ' + fmt(h.psa10) : '') + '</div>' +
+        '<div class="badges">' +
+          '<span class="badge bc">PRED: ' + h.predicted + '</span>' +
+          (h.actual
+            ? '<span class="badge bb">ACTUAL: ' + h.actual + '</span>' +
+              '<span class="badge ' + (Math.abs(h.actual - h.predicted) <= 0.5 ? 'bb' : 'by') + '">Δ' + (h.actual - h.predicted >= 0 ? '+' : '') + (h.actual - h.predicted).toFixed(1) + '</span>'
+            : '<span class="badge bg">PENDING</span>') +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+}
+
+// ── Stats ─────────────────────────────────────────
+function renderStats() {
+  const el = document.getElementById('statsContent');
+  const graded = history.filter(h => h.actual != null);
+  if (graded.length < 2) { el.innerHTML = '<div class="empty"><i class="ti ti-chart-bar"></i><p>' + (graded.length < 1 ? 'LOG ACTUAL GRADES\nTO SEE STATS.' : 'NEED AT LEAST\n2 GRADED CARDS.') + '</p></div>'; return; }
+  const diffs = graded.map(h => Math.abs(h.actual - h.predicted));
+  const mae = diffs.reduce((a,b) => a+b, 0) / diffs.length;
+  const w1 = diffs.filter(d => d <= 1).length;
+  const w05 = diffs.filter(d => d <= 0.5).length;
+  const acc1 = Math.round(w1 / graded.length * 100);
+  const acc05 = Math.round(w05 / graded.length * 100);
+  const bias = (graded.reduce((a,h) => a+h.predicted, 0) / graded.length) - (graded.reduce((a,h) => a+h.actual, 0) / graded.length);
+  const roiCards = graded.filter(h => h.psa10 && h.raw);
+  const totalROI = roiCards.reduce((a,h) => a + (h.psa10 - h.raw - 30), 0);
+  el.innerHTML =
+    '<div class="sbar"><div style="font-size:6px;color:var(--text2);margin-bottom:8px">WITHIN 1 GRADE · ' + w1 + ' OF ' + graded.length + '</div><div class="srow"><div class="strack"><div class="sfill" style="width:' + acc1 + '%;background:var(--char)"></div></div><div class="sval">' + acc1 + '%</div></div></div>' +
+    '<div class="sbar"><div style="font-size:6px;color:var(--text2);margin-bottom:8px">WITHIN 0.5 GRADES</div><div class="srow"><div class="strack"><div class="sfill" style="width:' + acc05 + '%;background:var(--bulba)"></div></div><div class="sval">' + acc05 + '%</div></div></div>' +
+    '<div class="sgrid">' +
+      '<div class="sbox"><div style="font-size:6px;color:var(--text2);margin-bottom:6px">AVG ERROR</div><div style="font-size:20px;color:' + (mae<=1?'var(--bulba)':mae<=1.5?'var(--char)':'var(--red)') + ';text-shadow:2px 2px 0 #000">' + mae.toFixed(2) + '</div></div>' +
+      '<div class="sbox"><div style="font-size:6px;color:var(--text2);margin-bottom:6px">BIAS</div><div style="font-size:20px;color:' + (Math.abs(bias)<=0.3?'var(--bulba)':'var(--char)') + ';text-shadow:2px 2px 0 #000">' + (bias>=0?'+':'') + bias.toFixed(2) + '</div></div>' +
+    '</div>' +
+    (roiCards.length ? '<div class="sbar"><div style="font-size:6px;color:var(--text2);margin-bottom:6px">TOTAL EST. ROI · ' + roiCards.length + ' CARDS</div><div style="font-size:18px;color:' + (totalROI>=0?'var(--bulba)':'var(--red)') + ';text-shadow:2px 2px 0 #000">' + (totalROI>=0?'+':'') + fmt(totalROI) + '</div></div>' : '') +
+    '<div class="sbar"><p style="font-size:6.5px;color:var(--text2);line-height:2">' + (bias>0.5?'⚠ OVER-PREDICTING. KEEP LOGGING.':bias<-0.5?'⚠ UNDER-PREDICTING.':'✓ BIAS HEALTHY. KEEP LOGGING.') + '<br>LOGGED: ' + graded.length + ' · PENDING: ' + (history.length - graded.length) + '</p></div>';
+}
+
+// ── Clear ─────────────────────────────────────────
+function clearHistory() {
+  if (!confirm('CLEAR ALL HISTORY?\nCANNOT BE UNDONE.')) return;
+  history = [];
+  try { localStorage.removeItem('pcg_h'); } catch(e) {}
+  renderHistory();
+}
+
+// ── Init ──────────────────────────────────────────
+updateKeyUI();
+showBanner();
+updateDebugBadge();
+renderDebugRuns();
+</script>
+</body>
+</html>
